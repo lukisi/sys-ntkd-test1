@@ -1,0 +1,17 @@
+commander.c
+fake_command_dispatcher.c
+main.c
+sys_ntkd_alone_vala.stamp*
+Makefile.in
+aclocal.m4
+autom4te.cache
+compile
+config.guess
+config.h.in
+config.sub
+configure
+depcomp
+install-sh
+ltmain.sh
+missing
+test-driver
