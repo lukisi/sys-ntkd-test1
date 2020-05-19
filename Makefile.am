@@ -13,6 +13,12 @@ sys_ntkd_alone_SOURCES =  \
 	main.vala \
 	commander.vala \
 	fake_command_dispatcher.vala \
+	serializables.vala \
+	rpc/skeleton_factory.vala \
+	rpc/module_skeletons.vala \
+	rpc/stub_factory.vala \
+	rpc/module_stubs.vala \
+	neighborhood_helpers.vala \
 	neighborhood/neighborhood.vapi \
 	$(NULL)
 

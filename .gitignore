@@ -1,6 +1,12 @@
+main.c
 commander.c
 fake_command_dispatcher.c
-main.c
+rpc/module_skeletons.c
+rpc/module_stubs.c
+rpc/skeleton_factory.c
+rpc/stub_factory.c
+neighborhood_helpers.c
+serializables.c
 sys_ntkd_alone_vala.stamp*
 Makefile.in
 aclocal.m4
