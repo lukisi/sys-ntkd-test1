@@ -90,6 +90,8 @@ namespace Netsukuku
         public INeighborhoodArc?
         is_from_unicast(CallerInfo _rpc_caller, Gee.List<INeighborhoodArc> arcs)
         {
+            return null;
+            /*
             if (_rpc_caller is StreamCallerInfo)
             {
                 StreamCallerInfo rpc_caller = (StreamCallerInfo)_rpc_caller;
@@ -115,6 +117,7 @@ namespace Netsukuku
                 else error("not rpc_caller.listener is StreamSystemListener");
             }
             else return null;
+            */
         }
     }
 
