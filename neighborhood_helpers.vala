@@ -67,9 +67,12 @@ namespace Netsukuku
             INeighborhoodArc arc,
             bool wait_reply = true)
         {
+            error("not in this test");
+            /*
             IAddressManagerStub addrstub = stub_factory.get_stub_whole_node_unicast(arc, wait_reply);
             NeighborhoodManagerStubHolder ret = new NeighborhoodManagerStubHolder(addrstub);
             return ret;
+            */
         }
     }
 
