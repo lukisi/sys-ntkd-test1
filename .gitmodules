@@ -1,3 +1,6 @@
 [submodule "neighborhood"]
 	path = neighborhood
 	url = /home/luca/github/neighborhood
+[submodule "identities"]
+	path = identities
+	url = /home/luca/github/identities

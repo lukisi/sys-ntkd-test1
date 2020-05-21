@@ -1,22 +1,53 @@
+/*
+ *  This file is part of Netsukuku.
+ *  Copyright (C) 2020 Luca Dionisi aka lukisi <luca.dionisi@gmail.com>
+ *
+ *  Netsukuku is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Netsukuku is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Netsukuku.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 using Gee;
 using TaskletSystem;
 using Netsukuku.Neighborhood;
+using Netsukuku.Identities;
 
 namespace Netsukuku
 {
+    string json_string_object(Object obj)
+    {
+        Json.Node n = Json.gobject_serialize(obj);
+        Json.Generator g = new Json.Generator();
+        g.root = n;
+        string ret = g.to_data(null);
+        return ret;
+    }
 
+    string topology;
+    string firstaddr;
+    int pid;
     [CCode (array_length = false, array_null_terminated = true)]
     string[] interfaces;
-    int pid;
 
     ITasklet tasklet;
     Commander cm;
     FakeCommandDispatcher fake_cm;
     NeighborhoodManager? neighborhood_mgr;
+    IdentityManager? identity_mgr;
+    ArrayList<NodeArc> arc_list;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
-
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
+    ArrayList<IdmgmtArc> arcs;
 
     int main(string[] _args)
     {
@@ -53,6 +84,7 @@ namespace Netsukuku
 
         // Initialize modules that have remotable methods (serializable classes need to be registered).
         NeighborhoodManager.init(tasklet);
+        IdentityManager.init(tasklet);
         typeof(WholeNodeSourceID).class_peek();
         typeof(WholeNodeUnicastID).class_peek();
         typeof(EveryWholeNodeBroadcastID).class_peek();
@@ -63,6 +95,7 @@ namespace Netsukuku
         uint32 seed_prn = (uint32)_seed.hash();
         PRNGen.init_rngen(null, seed_prn);
         NeighborhoodManager.init_rngen(null, seed_prn);
+        IdentityManager.init_rngen(null, seed_prn);
 
         // Pass tasklet system to the RPC library (ntkdrpc)
         init_tasklet_system(tasklet);
@@ -135,9 +168,10 @@ namespace Netsukuku
             if (do_me_exit) break;
         }
 
-        // Call stop_monitor of NeighborhoodManager.
-        foreach (string dev in devs) stop_monitor(dev);
-        devs.clear();
+        // Call stop_rpc.
+        ArrayList<string> final_devs = new ArrayList<string>();
+        final_devs.add_all(pseudonic_map.keys);
+        foreach (string dev in final_devs) stop_rpc(dev);
 
         // Then we destroy the object NeighborhoodManager.
         neighborhood_mgr = null;
@@ -155,7 +189,7 @@ namespace Netsukuku
         do_me_exit = true;
     }
 
-    void stop_monitor(string dev)
+    void stop_rpc(string dev)
     {
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
         skeleton_factory.stop_stream_system_listen(pseudonic.st_listen_pathname);
@@ -163,6 +197,7 @@ namespace Netsukuku
         neighborhood_mgr.stop_monitor(dev);
         skeleton_factory.stop_datagram_system_listen(pseudonic.listen_pathname);
         print(@"stopped datagram_system_listen $(pseudonic.listen_pathname).\n");
+        pseudonic_map.unset(dev);
     }
 
     class PseudoNetworkInterface : Object
@@ -182,5 +217,16 @@ namespace Netsukuku
         public string linklocal {get; set;}
         public string st_listen_pathname {get; set;}
         public INeighborhoodNetworkInterface nic {get; set;}
+    }
+
+    class NodeArc : Object
+    {
+        public NodeArc(INeighborhoodArc neighborhood_arc, IdmgmtArc i_arc)
+        {
+            this.neighborhood_arc = neighborhood_arc;
+            this.i_arc = i_arc;
+        }
+        public INeighborhoodArc neighborhood_arc;
+        public IdmgmtArc i_arc; // for module Identities
     }
 }

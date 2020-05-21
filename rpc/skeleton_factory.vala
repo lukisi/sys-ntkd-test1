@@ -118,10 +118,45 @@ namespace Netsukuku
             else abort_tasklet(@"Unknown caller_info: $(_rpc_caller.get_type().name())");
         }
 
-        public INeighborhoodArc?
+        /* Get NodeArc where a received message has transited. For whole-node requests.
+         */
+        public NodeArc?
         from_caller_get_nodearc(CallerInfo rpc_caller)
         {
-            error("not implemented yet");
+            return null; // no arcs in this testsuite.
+            /*
+            if (rpc_caller is StreamCallerInfo)
+            {
+                // in this test we have only WholeNodeSourceID
+                StreamCallerInfo caller_info = (StreamCallerInfo)rpc_caller;
+                ISourceID _source_id = caller_info.source_id;
+                if (! (_source_id is WholeNodeSourceID)) return null;
+                NeighborhoodNodeID peer_node_id = ((WholeNodeSourceID)_source_id).id;
+                Listener listener = caller_info.listener;
+                assert(listener is StreamSystemListener);
+                string listen_pathname = ((StreamSystemListener)listener).listen_pathname;
+                assert(caller_info.src_nic is NeighbourSrcNic);
+                NeighbourSrcNic src_nic = (NeighbourSrcNic)caller_info.src_nic;
+                string neighbour_mac = src_nic.mac;
+                foreach (NodeArc node_arc in arc_list)
+                {
+                    INeighborhoodArc neighborhood_arc = node_arc.neighborhood_arc;
+                    PseudoNetworkInterface arc_my_pseudonic = pseudonic_map[neighborhood_arc.nic.dev];
+                    // check listen_pathname
+                    if (arc_my_pseudonic.st_listen_pathname != listen_pathname) continue;
+                    // check neighbour_mac
+                    if (neighborhood_arc.neighbour_nic_addr != neighbour_mac) continue;
+                    // check peer_node_id
+                    if (neighborhood_arc.neighbour_id.equals(peer_node_id)) return node_arc;
+                }
+                return null;
+            }
+            else
+            {
+                // unexpected class.
+                return null;
+            }
+            */
         }
 
         // from_caller_get_identityarc not in this test

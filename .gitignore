@@ -8,6 +8,8 @@ rpc/skeleton_factory.c
 rpc/stub_factory.c
 neighborhood_helpers.c
 neighborhood_signals.c
+identities_helpers.c
+identities_signals.c
 serializables.c
 sys_ntkd_alone_vala.stamp*
 Makefile.in

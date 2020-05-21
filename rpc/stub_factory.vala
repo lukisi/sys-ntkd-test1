@@ -36,6 +36,7 @@ namespace Netsukuku
 
         /* Get a stub for a whole-node unicast request.
          */
+        // no arcs in this testsuite.
         /*
         public IAddressManagerStub
         get_stub_whole_node_unicast(
