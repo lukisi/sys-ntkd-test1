@@ -120,11 +120,11 @@ namespace Netsukuku
 
         /* Get NodeArc where a received message has transited. For whole-node requests.
          */
+        // no arcs in this testsuite.
+        /*
         public NodeArc?
         from_caller_get_nodearc(CallerInfo rpc_caller)
         {
-            return null; // no arcs in this testsuite.
-            /*
             if (rpc_caller is StreamCallerInfo)
             {
                 // in this test we have only WholeNodeSourceID
@@ -156,8 +156,8 @@ namespace Netsukuku
                 // unexpected class.
                 return null;
             }
-            */
         }
+        */
 
         // from_caller_get_identityarc not in this test
 

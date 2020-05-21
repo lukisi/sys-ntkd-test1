@@ -151,6 +151,8 @@ namespace Netsukuku
         }
     }
 
+    // Not used in this test
+    /*
     class IdmgmtArc : Object, IIdmgmtArc
     {
         public IdmgmtArc(INeighborhoodArc neighborhood_arc)
@@ -177,4 +179,5 @@ namespace Netsukuku
             return neighborhood_arc.neighbour_nic_addr;
         }
     }
+    */
 }

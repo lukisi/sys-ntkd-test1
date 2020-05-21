@@ -43,11 +43,13 @@ namespace Netsukuku
     FakeCommandDispatcher fake_cm;
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
-    ArrayList<NodeArc> arc_list;
+    // not used in this test
+    /*ArrayList<NodeArc> arc_list;*/
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
-    ArrayList<IdmgmtArc> arcs;
+    // not used in this test
+    /*ArrayList<IdmgmtArc> arcs;*/
 
     int main(string[] _args)
     {
@@ -219,6 +221,8 @@ namespace Netsukuku
         public INeighborhoodNetworkInterface nic {get; set;}
     }
 
+    // not used in this test
+    /*
     class NodeArc : Object
     {
         public NodeArc(INeighborhoodArc neighborhood_arc, IdmgmtArc i_arc)
@@ -229,4 +233,5 @@ namespace Netsukuku
         public INeighborhoodArc neighborhood_arc;
         public IdmgmtArc i_arc; // for module Identities
     }
+    */
 }

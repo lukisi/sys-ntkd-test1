@@ -36,31 +36,42 @@ namespace Netsukuku
 
     void neighborhood_arc_added(INeighborhoodArc neighborhood_arc)
     {
+        // no arcs in this testsuite.
+        /*
         print(@"signal arc_added.\n");
         // Add arc to module Identities and to arc_list
         IdmgmtArc i_arc = new IdmgmtArc(neighborhood_arc);
         arc_list.add(new NodeArc(neighborhood_arc, i_arc));
         identity_mgr.add_arc(i_arc);
+        */
     }
 
     void neighborhood_arc_changed(INeighborhoodArc neighborhood_arc)
     {
+        // no arcs in this testsuite.
+        /*
         print(@"signal arc_changed.\n");
         // TODO for each identity, for each id-arc, if qspn_arc is present, change cost
+        */
     }
 
     void neighborhood_arc_removing(INeighborhoodArc neighborhood_arc, bool is_still_usable)
     {
+        // no arcs in this testsuite.
+        /*
         print(@"signal arc_removing.\n");
         // Remove arc from module Identities
         IdmgmtArc? to_del = null;
         foreach (NodeArc arc in arc_list) if (arc.neighborhood_arc == neighborhood_arc) {to_del = arc.i_arc; break;}
         if (to_del == null) return;
         identity_mgr.remove_arc(to_del);
+        */
     }
 
     void neighborhood_arc_removed(INeighborhoodArc neighborhood_arc)
     {
+        // no arcs in this testsuite.
+        /*
         print(@"signal arc_removed.\n");
         // Remove arc from arc_list
         NodeArc? to_del = null;
@@ -68,6 +79,7 @@ namespace Netsukuku
         if (to_del == null) return;
         arc_list.remove(to_del);
         // TODO ?
+        */
     }
 
     void neighborhood_nic_address_unset(INeighborhoodNetworkInterface nic, string my_addr)
