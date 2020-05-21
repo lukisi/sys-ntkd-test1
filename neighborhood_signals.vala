@@ -28,6 +28,10 @@ namespace Netsukuku
         print(@"signal nic_address_set $(my_addr).\n");
         string dev = nic.dev;
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
+
+        HandledNic n = new HandledNic(pseudonic.dev, pseudonic.mac, my_addr, nic);
+        handlednic_map[pseudonic.dev] = n;
+
         pseudonic.linklocal = my_addr;
         pseudonic.st_listen_pathname = @"conn_$(my_addr)";
         skeleton_factory.start_stream_system_listen(pseudonic.st_listen_pathname);
@@ -38,10 +42,10 @@ namespace Netsukuku
     {
         // no arcs in this testsuite.
         /*
-        print(@"signal arc_added.\n");
-        // Add arc to module Identities and to arc_list
+        print(@"Neighborhood: Signal arc_added.\n");
+        // Add arc to module Identities and to arc_map
         IdmgmtArc i_arc = new IdmgmtArc(neighborhood_arc);
-        arc_list.add(new NodeArc(neighborhood_arc, i_arc));
+        arc_map[i_arc.id] = new NodeArc(neighborhood_arc, i_arc);
         identity_mgr.add_arc(i_arc);
         */
     }
@@ -50,7 +54,7 @@ namespace Netsukuku
     {
         // no arcs in this testsuite.
         /*
-        print(@"signal arc_changed.\n");
+        print(@"Neighborhood: Signal arc_changed.\n");
         // TODO for each identity, for each id-arc, if qspn_arc is present, change cost
         */
     }
@@ -59,12 +63,17 @@ namespace Netsukuku
     {
         // no arcs in this testsuite.
         /*
-        print(@"signal arc_removing.\n");
+        print(@"Neighborhood: Signal arc_removing.\n");
         // Remove arc from module Identities
-        IdmgmtArc? to_del = null;
-        foreach (NodeArc arc in arc_list) if (arc.neighborhood_arc == neighborhood_arc) {to_del = arc.i_arc; break;}
-        if (to_del == null) return;
-        identity_mgr.remove_arc(to_del);
+        foreach (int id in arc_map.keys)
+        {
+            NodeArc arc = arc_map[id];
+            if (arc.neighborhood_arc == neighborhood_arc)
+            {
+                identity_mgr.remove_arc(arc.i_arc);
+                break;
+            }
+        }
         */
     }
 
@@ -72,19 +81,24 @@ namespace Netsukuku
     {
         // no arcs in this testsuite.
         /*
-        print(@"signal arc_removed.\n");
-        // Remove arc from arc_list
-        NodeArc? to_del = null;
-        foreach (NodeArc arc in arc_list) if (arc.neighborhood_arc == neighborhood_arc) {to_del = arc; break;}
-        if (to_del == null) return;
-        arc_list.remove(to_del);
+        print(@"Neighborhood: Signal arc_removed.\n");
+        // Remove arc from arc_map
+        foreach (int id in arc_map.keys)
+        {
+            NodeArc arc = arc_map[id];
+            if (arc.neighborhood_arc == neighborhood_arc)
+            {
+                arc_map.unset(id);
+                break;
+            }
+        }
         // TODO ?
         */
     }
 
     void neighborhood_nic_address_unset(INeighborhoodNetworkInterface nic, string my_addr)
     {
-        print(@"signal nic_address_unset $(my_addr).\n");
+        print(@"Neighborhood: Signal nic_address_unset $(my_addr).\n");
         // TODO ?
     }
 }

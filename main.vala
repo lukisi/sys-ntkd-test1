@@ -44,12 +44,12 @@ namespace Netsukuku
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
     // not used in this test
-    /*ArrayList<NodeArc> arc_list;*/
+    /*HashMap<int,NodeArc> arc_map;*/
+    HashMap<string,HandledNic> handlednic_map;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
-    // not used in this test
-    /*ArrayList<IdmgmtArc> arcs;*/
+    ArrayList<NodeID> my_nodeid_list;
 
     int main(string[] _args)
     {
@@ -132,14 +132,20 @@ namespace Netsukuku
         neighborhood_mgr.arc_removed.connect(neighborhood_arc_removed);
         neighborhood_mgr.nic_address_unset.connect(neighborhood_nic_address_unset);
 
+        handlednic_map = new HashMap<string,HandledNic>();
         pseudonic_map = new HashMap<string,PseudoNetworkInterface>();
+        Gee.List<string> if_list_dev = new ArrayList<string>();
+        Gee.List<string> if_list_mac = new ArrayList<string>();
+        Gee.List<string> if_list_linklocal = new ArrayList<string>();
         foreach (string dev in devs)
         {
             assert(!(dev in pseudonic_map.keys));
             string listen_pathname = @"recv_$(pid)_$(dev)";
             string send_pathname = @"send_$(pid)_$(dev)";
             string mac = @"fe:aa:aa:$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99)):$(PRNGen.int_range(10, 99))";
-            pseudonic_map[dev] = new PseudoNetworkInterface(dev, listen_pathname, send_pathname, mac);
+            print(@"INFO: mac for $(pid),$(dev) is $(mac).\n");
+            PseudoNetworkInterface pseudonic = new PseudoNetworkInterface(dev, listen_pathname, send_pathname, mac);
+            pseudonic_map[dev] = pseudonic;
 
             // Set up NIC
             bid = fake_cm.begin_block();
@@ -156,9 +162,32 @@ namespace Netsukuku
             // Start listen datagram on dev
             skeleton_factory.start_datagram_system_listen(listen_pathname, send_pathname, new NeighbourSrcNic(mac));
             print(@"started datagram_system_listen $(listen_pathname) $(send_pathname) $(mac).\n");
-            // Run monitor. This will also set the IP link-local address and the field will be compiled.
+            // Run monitor. This will also set the IP link-local address,
+            //  the stream_listener will start and the 'linklocal' field will be compiled.
             neighborhood_mgr.start_monitor(pseudonic_map[dev].nic);
+            tasklet.ms_wait(5);
+            print(@"INFO: linklocal for $(mac) is $(handlednic_map[dev].linklocal).\n");
+
+            if_list_dev.add(dev);
+            if_list_mac.add(mac);
+            if_list_linklocal.add(handlednic_map[dev].linklocal);
         }
+
+        my_nodeid_list = new ArrayList<NodeID>();
+
+        // Init module Identities
+        identity_mgr = new IdentityManager(
+            if_list_dev, if_list_mac, if_list_linklocal,
+            new IdmgmtNetnsManager(),
+            new IdmgmtStubFactory(),
+            () => @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))");
+        my_nodeid_list.add(identity_mgr.get_main_id());
+        // connect signals
+        identity_mgr.identity_arc_added.connect(identities_identity_arc_added);
+        identity_mgr.identity_arc_changed.connect(identities_identity_arc_changed);
+        identity_mgr.identity_arc_removing.connect(identities_identity_arc_removing);
+        identity_mgr.identity_arc_removed.connect(identities_identity_arc_removed);
+        identity_mgr.arc_removed.connect(identities_arc_removed);
 
         // register handlers for SIGINT and SIGTERM to exit
         Posix.@signal(Posix.Signal.INT, safe_exit);
@@ -193,6 +222,7 @@ namespace Netsukuku
 
     void stop_rpc(string dev)
     {
+        string linklocal = handlednic_map[dev].linklocal;
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
         skeleton_factory.stop_stream_system_listen(pseudonic.st_listen_pathname);
         print(@"stopped stream_system_listen $(pseudonic.st_listen_pathname).\n");
@@ -219,6 +249,22 @@ namespace Netsukuku
         public string linklocal {get; set;}
         public string st_listen_pathname {get; set;}
         public INeighborhoodNetworkInterface nic {get; set;}
+    }
+
+    class HandledNic : Object
+    {
+        public HandledNic(string dev, string mac, string linklocal, INeighborhoodNetworkInterface nic)
+        {
+            this.dev = dev;
+            this.mac = mac;
+            this.linklocal = linklocal;
+            this.nic = nic;
+        }
+
+        public string dev {get; private set;}
+        public string mac {get; private set;}
+        public string linklocal {get; private set;}
+        public INeighborhoodNetworkInterface nic {get; private set;}
     }
 
     // not used in this test

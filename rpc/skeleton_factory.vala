@@ -138,14 +138,15 @@ namespace Netsukuku
                 assert(caller_info.src_nic is NeighbourSrcNic);
                 NeighbourSrcNic src_nic = (NeighbourSrcNic)caller_info.src_nic;
                 string neighbour_mac = src_nic.mac;
-                foreach (NodeArc node_arc in arc_list)
+                foreach (int id in arc_map.keys)
                 {
+                    NodeArc node_arc = arc_map[id];
                     INeighborhoodArc neighborhood_arc = node_arc.neighborhood_arc;
                     PseudoNetworkInterface arc_my_pseudonic = pseudonic_map[neighborhood_arc.nic.dev];
                     // check listen_pathname
                     if (arc_my_pseudonic.st_listen_pathname != listen_pathname) continue;
                     // check neighbour_mac
-                    if (neighborhood_arc.neighbour_nic_addr != neighbour_mac) continue;
+                    if (neighborhood_arc.neighbour_mac != neighbour_mac) continue;
                     // check peer_node_id
                     if (neighborhood_arc.neighbour_id.equals(peer_node_id)) return node_arc;
                 }
@@ -224,7 +225,8 @@ namespace Netsukuku
             protected unowned IIdentityManagerSkeleton
             identity_manager_getter()
             {
-                error("not in this test");
+                // global var identity_mgr is IdentityManager, which is a IIdentityManagerSkeleton
+                return identity_mgr;
             }
 
             public unowned IQspnManagerSkeleton
