@@ -4,3 +4,6 @@
 [submodule "identities"]
 	path = identities
 	url = /home/luca/github/identities
+[submodule "qspn"]
+	path = qspn
+	url = /home/luca/github/qspn

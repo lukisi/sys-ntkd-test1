@@ -20,6 +20,7 @@ using Gee;
 using TaskletSystem;
 using Netsukuku.Neighborhood;
 using Netsukuku.Identities;
+using Netsukuku.Qspn;
 
 namespace Netsukuku
 {
@@ -37,10 +38,18 @@ namespace Netsukuku
     int pid;
     [CCode (array_length = false, array_null_terminated = true)]
     string[] interfaces;
+    bool accept_anonymous_requests;
+    bool no_anonymize;
+    int subnetlevel;
 
     ITasklet tasklet;
     Commander cm;
     FakeCommandDispatcher fake_cm;
+    ArrayList<int> gsizes;
+    ArrayList<int> g_exp;
+    ArrayList<int> hooking_epsilon;
+    int levels;
+
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
     // not used in this test
@@ -49,16 +58,63 @@ namespace Netsukuku
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
     HashMap<string,PseudoNetworkInterface> pseudonic_map;
-    ArrayList<NodeID> my_nodeid_list;
+    HashMap<int,IdentityData> local_identities;
+    int next_local_identity_index = 0;
+
+    IdentityData create_local_identity(NodeID nodeid, int local_identity_index)
+    {
+        if (local_identities == null) local_identities = new HashMap<int,IdentityData>();
+        assert(! (nodeid.id in local_identities.keys));
+        IdentityData ret = new IdentityData(nodeid, local_identity_index);
+        local_identities[nodeid.id] = ret;
+        return ret;
+    }
+
+    IdentityData? find_local_identity(NodeID nodeid)
+    {
+        assert(local_identities != null);
+        if (nodeid.id in local_identities.keys) return local_identities[nodeid.id];
+        return null;
+    }
+
+    IdentityData? find_local_identity_by_index(int local_identity_index)
+    {
+        assert(local_identities != null);
+        foreach (IdentityData id in local_identities.values)
+            if (id.local_identity_index == local_identity_index)
+            return id;
+        return null;
+    }
+
+    void remove_local_identity(NodeID nodeid)
+    {
+        assert(local_identities != null);
+        assert(nodeid.id in local_identities.keys);
+        local_identities.unset(nodeid.id);
+    }
+
+    const int max_paths = 5;
+    const double max_common_hops_ratio = 0.6;
+    const int arc_timeout = 10000;
 
     int main(string[] _args)
     {
         pid = 0; // default
+        topology = "1,1,1,2"; // default
+        firstaddr = ""; // default
+        subnetlevel = 0; // default
+        accept_anonymous_requests = false; // default
+        no_anonymize = false; // default
         OptionContext oc = new OptionContext("<options>");
-        OptionEntry[] entries = new OptionEntry[3];
+        OptionEntry[] entries = new OptionEntry[8];
         int index = 0;
+        entries[index++] = {"topology", '\0', 0, OptionArg.STRING, ref topology, "Topology in bits. Default: 1,1,1,2", null};
+        entries[index++] = {"firstaddr", '\0', 0, OptionArg.STRING, ref firstaddr, "First address. E.g. '0,0,1,3'. Default is random.", null};
         entries[index++] = {"pid", 'p', 0, OptionArg.INT, ref pid, "Fake PID (e.g. -p 1234).", null};
         entries[index++] = {"interfaces", 'i', 0, OptionArg.STRING_ARRAY, ref interfaces, "Interface (e.g. -i eth1). You can use it multiple times.", null};
+        entries[index++] = {"subnetlevel", 's', 0, OptionArg.INT, ref subnetlevel, "Level of g-node for autonomous subnet", null};
+        entries[index++] = {"serve-anonymous", 'k', 0, OptionArg.NONE, ref accept_anonymous_requests, "Accept anonymous requests", null};
+        entries[index++] = {"no-anonymize", 'j', 0, OptionArg.NONE, ref no_anonymize, "Disable anonymizer", null};
         entries[index++] = { null };
         oc.add_main_entries(entries, null);
         try {
@@ -71,7 +127,57 @@ namespace Netsukuku
 
         ArrayList<string> args = new ArrayList<string>.wrap(_args);
 
+        ArrayList<int> naddr;
         ArrayList<string> devs;
+
+        // Topoplogy of the network.
+        gsizes = new ArrayList<int>();
+        g_exp = new ArrayList<int>();
+        string[] topology_bits_array = topology.split(",");
+        foreach (string s_topology_bits in topology_bits_array)
+        {
+            int64 topology_bits;
+            if (! int64.try_parse(s_topology_bits, out topology_bits)) error("Bad arg topology");
+            int _g_exp = (int)topology_bits;
+
+            if (_g_exp < 1 || _g_exp > 16) error(@"Bad g_exp $(_g_exp): must be between 1 and 16");
+            int gsize = 1 << _g_exp;
+            g_exp.add(_g_exp);
+            gsizes.add(gsize);
+        }
+        levels = gsizes.size;
+        naddr = new ArrayList<int>();
+        // If first address is forced:
+        if (firstaddr != "")
+        {
+            string[] firstaddr_array = firstaddr.split(",");
+            if (firstaddr_array.length != levels) error("Bad first address");
+            for (int i = 0; i < levels; i++)
+            {
+                string s_firstaddr_part = firstaddr_array[i];
+                int64 i_firstaddr_part;
+                if (! int64.try_parse(s_firstaddr_part, out i_firstaddr_part)) error("Bad first address");
+                if (i_firstaddr_part < 0 || i_firstaddr_part > gsizes[i]-1) error("Bad first address");
+                naddr.add((int)i_firstaddr_part);
+            }
+        }
+
+        hooking_epsilon = new ArrayList<int>();
+        for (int i = 0; i < levels; i++)
+        {
+            int delta_bits = 5;
+            int eps = 0;
+            int j = i;
+            while (delta_bits > 0 && j < levels)
+            {
+                eps++;
+                delta_bits -= g_exp[j];
+                j++;
+            }
+            eps++;
+            hooking_epsilon.add(eps);
+        }
+
         // Names of the network interfaces to monitor.
         devs = new ArrayList<string>();
         foreach (string dev in interfaces) devs.add(dev);
@@ -82,15 +188,21 @@ namespace Netsukuku
         // Initialize tasklet system
         PthTaskletImplementer.init();
         tasklet = PthTaskletImplementer.get_tasklet_system();
-        fake_cm = new FakeCommandDispatcher();
 
         // Initialize modules that have remotable methods (serializable classes need to be registered).
         NeighborhoodManager.init(tasklet);
         IdentityManager.init(tasklet);
+        QspnManager.init(tasklet, max_paths, max_common_hops_ratio, arc_timeout, new ThresholdCalculator());
         typeof(WholeNodeSourceID).class_peek();
         typeof(WholeNodeUnicastID).class_peek();
         typeof(EveryWholeNodeBroadcastID).class_peek();
         typeof(NeighbourSrcNic).class_peek();
+        typeof(IdentityAwareSourceID).class_peek();
+        typeof(IdentityAwareUnicastID).class_peek();
+        typeof(IdentityAwareBroadcastID).class_peek();
+        typeof(Naddr).class_peek();
+        typeof(Fingerprint).class_peek();
+        typeof(Cost).class_peek();
 
         // Initialize pseudo-random number generators.
         string _seed = @"$(pid)";
@@ -98,12 +210,19 @@ namespace Netsukuku
         PRNGen.init_rngen(null, seed_prn);
         NeighborhoodManager.init_rngen(null, seed_prn);
         IdentityManager.init_rngen(null, seed_prn);
+        QspnManager.init_rngen(null, seed_prn);
 
-        // Pass tasklet system to the RPC library (ntkdrpc)
-        init_tasklet_system(tasklet);
+        // If first address is random:
+        if (firstaddr == "")
+            for (int i = 0; i < levels; i++)
+                naddr.add((int)PRNGen.int_range(0, gsizes[i]));
 
         // Commander
         cm = Commander.get_singleton();
+        fake_cm = new FakeCommandDispatcher();
+
+        // Pass tasklet system to the RPC library (ntkdrpc)
+        init_tasklet_system(tasklet);
 
         // RPC
         skeleton_factory = new SkeletonFactory();
@@ -173,21 +292,57 @@ namespace Netsukuku
             if_list_linklocal.add(handlednic_map[dev].linklocal);
         }
 
-        my_nodeid_list = new ArrayList<NodeID>();
-
         // Init module Identities
         identity_mgr = new IdentityManager(
             if_list_dev, if_list_mac, if_list_linklocal,
             new IdmgmtNetnsManager(),
             new IdmgmtStubFactory(),
             () => @"169.254.$(PRNGen.int_range(0, 255)).$(PRNGen.int_range(0, 255))");
-        my_nodeid_list.add(identity_mgr.get_main_id());
         // connect signals
         identity_mgr.identity_arc_added.connect(identities_identity_arc_added);
         identity_mgr.identity_arc_changed.connect(identities_identity_arc_changed);
         identity_mgr.identity_arc_removing.connect(identities_identity_arc_removing);
         identity_mgr.identity_arc_removed.connect(identities_identity_arc_removed);
         identity_mgr.arc_removed.connect(identities_arc_removed);
+
+        // first id
+        NodeID first_nodeid = identity_mgr.get_main_id();
+        string first_identity_name = @"$(pid)_$(next_local_identity_index)";
+        print(@"INFO: nodeid for $(first_identity_name) is $(first_nodeid.id).\n");
+        IdentityData first_identity_data = create_local_identity(first_nodeid, next_local_identity_index);
+        main_identity_data = first_identity_data;
+        next_local_identity_index++;
+
+        first_identity_data.my_naddr = new Naddr(naddr.to_array(), gsizes.to_array());
+        ArrayList<int> elderships = new ArrayList<int>();
+        for (int i = 0; i < levels; i++) elderships.add(0);
+        first_identity_data.my_fp = new Fingerprint(elderships.to_array());
+        print(@"INFO: $(first_identity_name) has address $(json_string_object(first_identity_data.my_naddr))");
+        print(@" and fp $(json_string_object(first_identity_data.my_fp)).\n");
+
+        // First qspn manager
+        first_identity_data.qspn_mgr = new QspnManager.create_net(
+            first_identity_data.my_naddr,
+            first_identity_data.my_fp,
+            new QspnStubFactory(first_identity_data.local_identity_index));
+        // immediately after creation, connect to signals.
+        first_identity_data.qspn_mgr.arc_removed.connect(first_identity_data.arc_removed);
+        first_identity_data.qspn_mgr.changed_fp.connect(first_identity_data.changed_fp);
+        first_identity_data.qspn_mgr.changed_nodes_inside.connect(first_identity_data.changed_nodes_inside);
+        first_identity_data.qspn_mgr.destination_added.connect(first_identity_data.destination_added);
+        first_identity_data.qspn_mgr.destination_removed.connect(first_identity_data.destination_removed);
+        first_identity_data.qspn_mgr.gnode_splitted.connect(first_identity_data.gnode_splitted);
+        first_identity_data.qspn_mgr.path_added.connect(first_identity_data.path_added);
+        first_identity_data.qspn_mgr.path_changed.connect(first_identity_data.path_changed);
+        first_identity_data.qspn_mgr.path_removed.connect(first_identity_data.path_removed);
+        first_identity_data.qspn_mgr.presence_notified.connect(first_identity_data.presence_notified);
+        first_identity_data.qspn_mgr.qspn_bootstrap_complete.connect(first_identity_data.qspn_bootstrap_complete);
+        first_identity_data.qspn_mgr.remove_identity.connect(first_identity_data.remove_identity);
+
+        // First identity is immediately bootstrapped.
+        while (! first_identity_data.qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(1);
+
+        first_identity_data = null;
 
         // register handlers for SIGINT and SIGTERM to exit
         Posix.@signal(Posix.Signal.INT, safe_exit);
@@ -198,6 +353,60 @@ namespace Netsukuku
             tasklet.ms_wait(100);
             if (do_me_exit) break;
         }
+
+        // Remove connectivity identities.
+        ArrayList<IdentityData> local_identities_copy = new ArrayList<IdentityData>();
+        local_identities_copy.add_all(local_identities.values);
+        foreach (IdentityData identity_data in local_identities_copy)
+        {
+            if (! identity_data.main_id)
+            {
+                // ... send "destroy" message.
+                identity_data.qspn_mgr.destroy();
+                // ... disconnect signal handlers of qspn_mgr.
+                identity_data.qspn_mgr.arc_removed.disconnect(identity_data.arc_removed);
+                identity_data.qspn_mgr.changed_fp.disconnect(identity_data.changed_fp);
+                identity_data.qspn_mgr.changed_nodes_inside.disconnect(identity_data.changed_nodes_inside);
+                identity_data.qspn_mgr.destination_added.disconnect(identity_data.destination_added);
+                identity_data.qspn_mgr.destination_removed.disconnect(identity_data.destination_removed);
+                identity_data.qspn_mgr.gnode_splitted.disconnect(identity_data.gnode_splitted);
+                identity_data.qspn_mgr.path_added.disconnect(identity_data.path_added);
+                identity_data.qspn_mgr.path_changed.disconnect(identity_data.path_changed);
+                identity_data.qspn_mgr.path_removed.disconnect(identity_data.path_removed);
+                identity_data.qspn_mgr.presence_notified.disconnect(identity_data.presence_notified);
+                identity_data.qspn_mgr.qspn_bootstrap_complete.disconnect(identity_data.qspn_bootstrap_complete);
+                identity_data.qspn_mgr.remove_identity.disconnect(identity_data.remove_identity);
+                identity_data.qspn_mgr.stop_operations();
+
+                remove_local_identity(identity_data.nodeid);
+            }
+        }
+        local_identities_copy = null;
+
+        // For main identity...
+        assert(local_identities.keys.size == 1);
+        IdentityData last_identity_data = local_identities.values.to_array()[0];
+        assert(last_identity_data.main_id);
+
+        // ... send "destroy" message.
+        last_identity_data.qspn_mgr.destroy();
+        // ... disconnect signal handlers of qspn_mgr.
+        last_identity_data.qspn_mgr.arc_removed.disconnect(last_identity_data.arc_removed);
+        last_identity_data.qspn_mgr.changed_fp.disconnect(last_identity_data.changed_fp);
+        last_identity_data.qspn_mgr.changed_nodes_inside.disconnect(last_identity_data.changed_nodes_inside);
+        last_identity_data.qspn_mgr.destination_added.disconnect(last_identity_data.destination_added);
+        last_identity_data.qspn_mgr.destination_removed.disconnect(last_identity_data.destination_removed);
+        last_identity_data.qspn_mgr.gnode_splitted.disconnect(last_identity_data.gnode_splitted);
+        last_identity_data.qspn_mgr.path_added.disconnect(last_identity_data.path_added);
+        last_identity_data.qspn_mgr.path_changed.disconnect(last_identity_data.path_changed);
+        last_identity_data.qspn_mgr.path_removed.disconnect(last_identity_data.path_removed);
+        last_identity_data.qspn_mgr.presence_notified.disconnect(last_identity_data.presence_notified);
+        last_identity_data.qspn_mgr.qspn_bootstrap_complete.disconnect(last_identity_data.qspn_bootstrap_complete);
+        last_identity_data.qspn_mgr.remove_identity.disconnect(last_identity_data.remove_identity);
+        last_identity_data.qspn_mgr.stop_operations();
+
+        remove_local_identity(last_identity_data.nodeid);
+        last_identity_data = null;
 
         // Call stop_rpc.
         ArrayList<string> final_devs = new ArrayList<string>();
@@ -280,4 +489,135 @@ namespace Netsukuku
         public IdmgmtArc i_arc; // for module Identities
     }
     */
+
+    IdentityData main_identity_data;
+    class IdentityData : Object
+    {
+        public IdentityData(NodeID nodeid, int local_identity_index)
+        {
+            this.local_identity_index = local_identity_index;
+            this.nodeid = nodeid;
+            identity_arcs = new ArrayList<IdentityArc>();
+            connectivity_from_level = 0;
+            connectivity_to_level = 0;
+            copy_of_identity = null;
+            qspn_mgr = null;
+        }
+
+        public int local_identity_index;
+
+        public NodeID nodeid;
+        public Naddr my_naddr;
+        public Fingerprint my_fp;
+        public int connectivity_from_level;
+        public int connectivity_to_level;
+        public weak IdentityData? copy_of_identity;
+
+        public QspnManager qspn_mgr;
+        public bool main_id {
+            get {
+                return this == main_identity_data;
+            }
+        }
+
+        public ArrayList<IdentityArc> identity_arcs;
+        public IdentityArc? identity_arcs_find(IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)
+        {
+            assert(identity_arcs != null);
+            foreach (IdentityArc ia in identity_arcs)
+                if (ia.arc == arc && ia.id_arc == id_arc)
+                return ia;
+            return null;
+        }
+
+        // handle signals from qspn_manager
+
+        public void arc_removed(IQspnArc arc, bool bad_link)
+        {
+            per_identity_qspn_arc_removed(this, arc, bad_link);
+        }
+
+        public void changed_fp(int l)
+        {
+            per_identity_qspn_changed_fp(this, l);
+        }
+
+        public void changed_nodes_inside(int l)
+        {
+            per_identity_qspn_changed_nodes_inside(this, l);
+        }
+
+        public void destination_added(HCoord h)
+        {
+            per_identity_qspn_destination_added(this, h);
+        }
+
+        public void destination_removed(HCoord h)
+        {
+            per_identity_qspn_destination_removed(this, h);
+        }
+
+        public void gnode_splitted(IQspnArc a, HCoord d, IQspnFingerprint fp)
+        {
+            per_identity_qspn_gnode_splitted(this, a, d, fp);
+        }
+
+        public void path_added(IQspnNodePath p)
+        {
+            per_identity_qspn_path_added(this, p);
+        }
+
+        public void path_changed(IQspnNodePath p)
+        {
+            per_identity_qspn_path_changed(this, p);
+        }
+
+        public void path_removed(IQspnNodePath p)
+        {
+            per_identity_qspn_path_removed(this, p);
+        }
+
+        public void presence_notified()
+        {
+            per_identity_qspn_presence_notified(this);
+        }
+
+        public void qspn_bootstrap_complete()
+        {
+            per_identity_qspn_qspn_bootstrap_complete(this);
+        }
+
+        public void remove_identity()
+        {
+            per_identity_qspn_remove_identity(this);
+        }
+    }
+
+    class IdentityArc : Object
+    {
+        private int local_identity_index;
+        private IdentityData? _identity_data;
+        public IdentityData identity_data {
+            get {
+                _identity_data = find_local_identity_by_index(local_identity_index);
+                if (_identity_data == null) tasklet.exit_tasklet();
+                return _identity_data;
+            }
+        }
+        public IIdmgmtArc arc;
+        public IIdmgmtIdentityArc id_arc;
+        public string peer_mac;
+        public string peer_linklocal;
+
+        public QspnArc? qspn_arc;
+
+        public IdentityArc(int local_identity_index, IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)
+        {
+            this.local_identity_index = local_identity_index;
+            this.arc = arc;
+            this.id_arc = id_arc;
+
+            qspn_arc = null;
+        }
+    }
 }

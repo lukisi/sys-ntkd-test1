@@ -10,6 +10,8 @@ neighborhood_helpers.c
 neighborhood_signals.c
 identities_helpers.c
 identities_signals.c
+qspn_helpers.c
+qspn_signals.c
 serializables.c
 sys_ntkd_alone_vala.stamp*
 Makefile.in

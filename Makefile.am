@@ -4,6 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = \
 	neighborhood \
 	identities \
+	qspn \
 	$(NULL)
 
 bin_PROGRAMS =  \
@@ -24,8 +25,11 @@ sys_ntkd_alone_SOURCES =  \
 	neighborhood_signals.vala \
 	identities_helpers.vala \
 	identities_signals.vala \
+	qspn_helpers.vala \
+	qspn_signals.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
+	qspn/qspn.vapi \
 	$(NULL)
 
 sys_ntkd_alone_VALAFLAGS = \
@@ -55,6 +59,7 @@ sys_ntkd_alone_CPPFLAGS = \
 	$(PEERS_CFLAGS) \
 	-I$(srcdir)/neighborhood \
 	-I$(srcdir)/identities \
+	-I$(srcdir)/qspn \
 	$(NULL)
 
 sys_ntkd_alone_LDADD = \
@@ -68,5 +73,6 @@ sys_ntkd_alone_LDADD = \
 	$(PEERS_LIBS) \
 	$(builddir)/neighborhood/libneighborhood.la \
 	$(builddir)/identities/libidentities.la \
+	$(builddir)/qspn/libqspn.la \
 	$(NULL)
 
