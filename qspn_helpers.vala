@@ -18,6 +18,8 @@
 
 using Gee;
 using Netsukuku;
+using Netsukuku.Neighborhood;
+using Netsukuku.Identities;
 using Netsukuku.Qspn;
 using TaskletSystem;
 
@@ -81,22 +83,20 @@ namespace Netsukuku
         public QspnArc(IdentityArc ia)
         {
             this.ia = ia;
-            arc = ia.arc;
-            int cost_seed = PRNGen.int_range(0, 1000);
-            cost = new Cost(arc.cost + cost_seed);
-            sourceid = ia.identity_data.nodeid;
-            destid = ia.peer_nodeid;
+            IIdmgmtArc _arc = ia.arc;
+            IdmgmtArc __arc = (IdmgmtArc)_arc;
+            arc = __arc.neighborhood_arc;
+            cost_seed = PRNGen.int_range(0, 1000);
         }
         public weak IdentityArc ia;
-        public PseudoArc arc;
-        public NodeID sourceid;
-        public NodeID destid;
-        private Cost cost;
+        public INeighborhoodArc arc;
+        private int cost_seed;
 
         public IQspnCost i_qspn_get_cost()
         {
             error("not in this test");
             /*
+            Cost cost = new Cost(arc.cost + cost_seed);
             return cost;
             */
         }

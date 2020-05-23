@@ -23,4 +23,65 @@ using TaskletSystem;
 
 namespace Netsukuku
 {
+    void per_identity_qspn_qspn_bootstrap_complete(IdentityData id)
+    {
+        try {
+            // TODO
+        } catch (QspnBootstrapInProgressError e) {assert_not_reached();}
+    }
+
+    void per_identity_qspn_destination_added(IdentityData id, HCoord h)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_destination_removed(IdentityData id, HCoord h)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_path_added(IdentityData id, IQspnNodePath p)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_path_changed(IdentityData id, IQspnNodePath p)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_path_removed(IdentityData id, IQspnNodePath p)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_changed_fp(IdentityData id, int l)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_changed_nodes_inside(IdentityData id, int l)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_presence_notified(IdentityData id)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_remove_identity(IdentityData id)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_arc_removed(IdentityData id, IQspnArc arc, bool bad_link)
+    {
+        // TODO
+    }
+
+    void per_identity_qspn_gnode_splitted(IdentityData id, IQspnArc a, HCoord d, IQspnFingerprint fp)
+    {
+        // TODO
+    }
 }

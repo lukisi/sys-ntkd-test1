@@ -27,6 +27,8 @@ sys_ntkd_alone_SOURCES =  \
 	identities_signals.vala \
 	qspn_helpers.vala \
 	qspn_signals.vala \
+	enter_network.vala \
+	migrate.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
 	qspn/qspn.vapi \

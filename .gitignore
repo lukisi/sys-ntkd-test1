@@ -13,6 +13,8 @@ identities_signals.c
 qspn_helpers.c
 qspn_signals.c
 serializables.c
+enter_network.c
+migrate.c
 sys_ntkd_alone_vala.stamp*
 Makefile.in
 aclocal.m4

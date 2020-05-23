@@ -62,7 +62,7 @@ namespace Netsukuku
         // Retrieve my identity.
         IdentityData identity_data = find_local_identity(id);
         // Retrieve IdentityArc.
-        IdentityArc ia = identity_data.identity_arcs_find(id_arc);
+        IdentityArc ia = identity_data.identity_arcs_find(arc, id_arc);
 
         // TODO
         */

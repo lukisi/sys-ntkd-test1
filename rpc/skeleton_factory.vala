@@ -144,10 +144,10 @@ namespace Netsukuku
                 {
                     foreach (IdentityArc ia in local_identity_data.identity_arcs)
                     {
-                        if (ia.arc.peer_mac == peer_mac
-                            && ia.arc.my_nic.dev == my_dev)
+                        if (ia.arc.get_peer_mac() == peer_mac
+                            && ia.arc.get_dev() == my_dev)
                         {
-                            if (ia.peer_nodeid.equals(source_nodeid))
+                            if (ia.id_arc.get_peer_nodeid().equals(source_nodeid))
                             {
                                 ret.add(new IdentitySkeleton(local_identity_data.local_identity_index));
                             }
