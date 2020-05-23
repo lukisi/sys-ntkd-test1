@@ -80,14 +80,21 @@ namespace Netsukuku
 
     class QspnArc : Object, IQspnArc
     {
-        public QspnArc(IdentityArc ia)
+        public QspnArc(NodeID sourceid, NodeID destid, IdentityArc ia)
         {
+            error("not in this test");
+            /*
+            this.sourceid = sourceid;
+            this.destid = destid;
             this.ia = ia;
             IIdmgmtArc _arc = ia.arc;
             IdmgmtArc __arc = (IdmgmtArc)_arc;
             arc = __arc.neighborhood_arc;
             cost_seed = PRNGen.int_range(0, 1000);
+            */
         }
+        public NodeID sourceid;
+        public NodeID destid;
         public weak IdentityArc ia;
         public INeighborhoodArc arc;
         private int cost_seed;

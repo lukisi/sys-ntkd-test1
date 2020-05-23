@@ -28,6 +28,17 @@ using TaskletSystem;
 
 namespace Netsukuku.EnterNetwork
 {
+    class IdentityArcPair : Object
+    {
+        public IdentityArcPair(IdentityArc old_id_arc, IdentityArc new_id_arc)
+        {
+            this.old_id_arc = old_id_arc;
+            this.new_id_arc = new_id_arc;
+        }
+        public IdentityArc old_id_arc {get; private set;}
+        public IdentityArc new_id_arc {get; private set;}
+    }
+
     void prepare_enter(int enter_id, IdentityData old_identity_data)
     {
         // Prepare duplication.
@@ -150,58 +161,58 @@ namespace Netsukuku.EnterNetwork
         new_qspn.qspn_bootstrap_complete.connect(new_identity_data.qspn_bootstrap_complete);
         new_qspn.remove_identity.connect(new_identity_data.remove_identity);
         identity_mgr.set_identity_module(new_nodeid, "qspn", new_qspn);
-        new_identity_data.qspn_mgr = new_qspn;  // weak ref
+        new_identity_data.qspn_mgr = new_qspn;
 
-        // prepare for operations on bootstrap_complete
-        new_identity_data.on_bootstrap_complete_do_create_peers_manager = true;
-        new_identity_data.on_bootstrap_complete_create_peers_manager_prev_peers_mgr = old_identity_data.peers_mgr;
-        new_identity_data.on_bootstrap_complete_create_peers_manager_guest_gnode_level = guest_gnode_level;
-        new_identity_data.on_bootstrap_complete_create_peers_manager_host_gnode_level = host_gnode_level;
+        //  // prepare for operations on bootstrap_complete
+        //  new_identity_data.on_bootstrap_complete_do_create_peers_manager = true;
+        //  new_identity_data.on_bootstrap_complete_create_peers_manager_prev_peers_mgr = old_identity_data.peers_mgr;
+        //  new_identity_data.on_bootstrap_complete_create_peers_manager_guest_gnode_level = guest_gnode_level;
+        //  new_identity_data.on_bootstrap_complete_create_peers_manager_host_gnode_level = host_gnode_level;
 
-        // CoordinatorManager
-        CoordinatorManager coord_mgr = new CoordinatorManager(gsizes,
-            new CoordinatorEvaluateEnterHandler(new_identity_data),
-            new CoordinatorBeginEnterHandler(new_identity_data),
-            new CoordinatorCompletedEnterHandler(new_identity_data),
-            new CoordinatorAbortEnterHandler(new_identity_data),
-            new CoordinatorPropagationHandler(new_identity_data),
-            new CoordinatorStubFactory(new_identity_data),
-            guest_gnode_level,
-            host_gnode_level,
-            old_identity_data.coord_mgr);
-        identity_mgr.set_identity_module(new_nodeid, "coordinator", coord_mgr);
-        new_identity_data.coord_mgr = coord_mgr;  // weak ref
+        //  // CoordinatorManager
+        //  CoordinatorManager coord_mgr = new CoordinatorManager(gsizes,
+        //      new CoordinatorEvaluateEnterHandler(new_identity_data),
+        //      new CoordinatorBeginEnterHandler(new_identity_data),
+        //      new CoordinatorCompletedEnterHandler(new_identity_data),
+        //      new CoordinatorAbortEnterHandler(new_identity_data),
+        //      new CoordinatorPropagationHandler(new_identity_data),
+        //      new CoordinatorStubFactory(new_identity_data),
+        //      guest_gnode_level,
+        //      host_gnode_level,
+        //      old_identity_data.coord_mgr);
+        //  identity_mgr.set_identity_module(new_nodeid, "coordinator", coord_mgr);
+        //  new_identity_data.coord_mgr = coord_mgr;  // weak ref
 
-        // HookingManager
-        HookingManager hook_mgr = new HookingManager(
-            new HookingMapPaths(new_identity_data),
-            new HookingCoordinator(new_identity_data));
-        identity_mgr.set_identity_module(new_nodeid, "hooking", hook_mgr);
-        new_identity_data.hook_mgr = hook_mgr;  // weak ref
-        // immediately after creation, connect to signals.
-        hook_mgr.same_network.connect((_ia) =>
-            per_identity_hooking_same_network(new_identity_data, _ia));
-        hook_mgr.another_network.connect((_ia, network_id) =>
-            per_identity_hooking_another_network(new_identity_data, _ia, network_id));
-        hook_mgr.do_prepare_migration.connect((migration_id) =>
-            per_identity_hooking_do_prepare_migration(new_identity_data, migration_id));
-        hook_mgr.do_finish_migration.connect(
-            (migration_id, guest_gnode_level, migration_data, go_connectivity_position) =>
-            per_identity_hooking_do_finish_migration
-            (new_identity_data, migration_id, guest_gnode_level,
-            migration_data, go_connectivity_position));
-        hook_mgr.do_prepare_enter.connect((enter_id) =>
-            per_identity_hooking_do_prepare_enter(new_identity_data, enter_id));
-        hook_mgr.do_finish_enter.connect(
-            (enter_id, guest_gnode_level, entry_data, go_connectivity_position) =>
-            per_identity_hooking_do_finish_enter
-            (new_identity_data, enter_id, guest_gnode_level,
-            entry_data, go_connectivity_position));
+        //  // HookingManager
+        //  HookingManager hook_mgr = new HookingManager(
+        //      new HookingMapPaths(new_identity_data),
+        //      new HookingCoordinator(new_identity_data));
+        //  identity_mgr.set_identity_module(new_nodeid, "hooking", hook_mgr);
+        //  new_identity_data.hook_mgr = hook_mgr;  // weak ref
+        //  // immediately after creation, connect to signals.
+        //  hook_mgr.same_network.connect((_ia) =>
+        //      per_identity_hooking_same_network(new_identity_data, _ia));
+        //  hook_mgr.another_network.connect((_ia, network_id) =>
+        //      per_identity_hooking_another_network(new_identity_data, _ia, network_id));
+        //  hook_mgr.do_prepare_migration.connect((migration_id) =>
+        //      per_identity_hooking_do_prepare_migration(new_identity_data, migration_id));
+        //  hook_mgr.do_finish_migration.connect(
+        //      (migration_id, guest_gnode_level, migration_data, go_connectivity_position) =>
+        //      per_identity_hooking_do_finish_migration
+        //      (new_identity_data, migration_id, guest_gnode_level,
+        //      migration_data, go_connectivity_position));
+        //  hook_mgr.do_prepare_enter.connect((enter_id) =>
+        //      per_identity_hooking_do_prepare_enter(new_identity_data, enter_id));
+        //  hook_mgr.do_finish_enter.connect(
+        //      (enter_id, guest_gnode_level, entry_data, go_connectivity_position) =>
+        //      per_identity_hooking_do_finish_enter
+        //      (new_identity_data, enter_id, guest_gnode_level,
+        //      entry_data, go_connectivity_position));
 
-        // AndnaManager  TODO
-        AndnaManager andna_mgr = new AndnaManager();
-        identity_mgr.set_identity_module(new_nodeid, "andna", andna_mgr);
-        new_identity_data.andna_mgr = andna_mgr;  // weak ref
+        //  // AndnaManager  TODO
+        //  AndnaManager andna_mgr = new AndnaManager();
+        //  identity_mgr.set_identity_module(new_nodeid, "andna", andna_mgr);
+        //  new_identity_data.andna_mgr = andna_mgr;  // weak ref
 
         foreach (IdentityArc ia in old_identity_data.identity_arcs)
         {
@@ -255,7 +266,6 @@ namespace Netsukuku.EnterNetwork
         old_qspn.qspn_bootstrap_complete.disconnect(old_identity_data.qspn_bootstrap_complete);
         old_qspn.remove_identity.disconnect(old_identity_data.remove_identity);
         identity_mgr.remove_identity(old_identity_data.nodeid);
-        old_identity_data.qspn_handlers_disabled = true;
         old_qspn.stop_operations();
         remove_local_identity(old_identity_data.nodeid);
     }
@@ -364,7 +374,7 @@ namespace Netsukuku.EnterNetwork
             IdentityArc w1 = arcpair.new_id_arc;
 
             NodeID destid = w1.id_arc.get_peer_nodeid();
-            NodeID sourceid = w1.id; // == new_id
+            NodeID sourceid = w1.identity_data.nodeid; // == new_id
             w1.qspn_arc = new QspnArc(sourceid, destid, w1);
 
             // Handle rare (but possible) situation where right in the middle of a duplication
@@ -396,7 +406,7 @@ namespace Netsukuku.EnterNetwork
             IdentityArc w1 = arcpair.new_id_arc;
 
             NodeID destid = w1.id_arc.get_peer_nodeid();
-            NodeID sourceid = w1.id; // == new_id
+            NodeID sourceid = w1.identity_data.nodeid; // == new_id
             w1.qspn_arc = new QspnArc(sourceid, destid, w1);
             // Adjust network_id in new arcs.
             w1.network_id = null;
@@ -426,7 +436,7 @@ namespace Netsukuku.EnterNetwork
             new_id.my_naddr,
             new_id.my_fp,
             update_copied_internal_fingerprints,
-            new QspnStubFactory(new_id),
+            new QspnStubFactory(new_id.local_identity_index),
             guest_gnode_level,
             host_gnode_level,
             old_id_qspn_mgr);

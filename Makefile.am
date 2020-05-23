@@ -27,12 +27,19 @@ sys_ntkd_alone_SOURCES =  \
 	identities_signals.vala \
 	qspn_helpers.vala \
 	qspn_signals.vala \
-	enter_network.vala \
-	migrate.vala \
+	identity_ip_commands.vala \
+	identity_ip_compute.vala \
+	table_names.vala \
+	ipv4_compute.vala \
+	update_graph.vala \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
 	qspn/qspn.vapi \
 	$(NULL)
+
+#	enter_network.vala \
+#	migrate.vala \
+#
 
 sys_ntkd_alone_VALAFLAGS = \
 	--vapidir $(GEE_PREFIX)/share/vala/vapi \

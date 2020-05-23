@@ -54,8 +54,9 @@ namespace Netsukuku
     int subnetlevel;
 
     ITasklet tasklet;
-    Commander cm;
+    Commander real_cm;
     FakeCommandDispatcher fake_cm;
+    TableNames tn;
     ArrayList<int> gsizes;
     ArrayList<int> g_exp;
     ArrayList<int> hooking_epsilon;
@@ -72,11 +73,11 @@ namespace Netsukuku
     HashMap<int,IdentityData> local_identities;
     int next_local_identity_index = 0;
 
-    IdentityData create_local_identity(NodeID nodeid, int local_identity_index)
+    IdentityData find_or_create_local_identity(NodeID nodeid)
     {
         if (local_identities == null) local_identities = new HashMap<int,IdentityData>();
-        assert(! (nodeid.id in local_identities.keys));
-        IdentityData ret = new IdentityData(nodeid, local_identity_index);
+        if (nodeid.id in local_identities.keys) return local_identities[nodeid.id];
+        IdentityData ret = new IdentityData(nodeid, next_local_identity_index++);
         local_identities[nodeid.id] = ret;
         return ret;
     }
@@ -229,8 +230,9 @@ namespace Netsukuku
                 naddr.add((int)PRNGen.int_range(0, gsizes[i]));
 
         // Commander
-        cm = Commander.get_singleton();
+        real_cm = Commander.get_singleton();
         fake_cm = new FakeCommandDispatcher();
+        tn = TableNames.get_singleton();
 
         // Pass tasklet system to the RPC library (ntkdrpc)
         init_tasklet_system(tasklet);
@@ -320,9 +322,8 @@ namespace Netsukuku
         NodeID first_nodeid = identity_mgr.get_main_id();
         string first_identity_name = @"$(pid)_$(next_local_identity_index)";
         print(@"INFO: nodeid for $(first_identity_name) is $(first_nodeid.id).\n");
-        IdentityData first_identity_data = create_local_identity(first_nodeid, next_local_identity_index);
+        IdentityData first_identity_data = find_or_create_local_identity(first_nodeid);
         main_identity_data = first_identity_data;
-        next_local_identity_index++;
 
         first_identity_data.my_naddr = new Naddr(naddr.to_array(), gsizes.to_array());
         ArrayList<int> elderships = new ArrayList<int>();
@@ -512,6 +513,9 @@ namespace Netsukuku
             connectivity_from_level = 0;
             connectivity_to_level = 0;
             copy_of_identity = null;
+            local_ip_set = null;
+            dest_ip_set = null;
+            bootstrap_phase_pending_updates = new ArrayList<HCoord>();
             qspn_mgr = null;
         }
 
@@ -523,13 +527,9 @@ namespace Netsukuku
         public int connectivity_from_level;
         public int connectivity_to_level;
         public weak IdentityData? copy_of_identity;
+        public Gee.List<HCoord> bootstrap_phase_pending_updates;
 
         public QspnManager qspn_mgr;
-        public bool main_id {
-            get {
-                return this == main_identity_data;
-            }
-        }
 
         public ArrayList<IdentityArc> identity_arcs;
         public IdentityArc? identity_arcs_find(IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)
@@ -539,6 +539,26 @@ namespace Netsukuku
                 if (ia.arc == arc && ia.id_arc == id_arc)
                 return ia;
             return null;
+        }
+
+        public LocalIPSet? local_ip_set;
+        public DestinationIPSet? dest_ip_set;
+
+        private string _network_namespace;
+        public string network_namespace {
+            get {
+                _network_namespace = identity_mgr.get_namespace(nodeid);
+                return _network_namespace;
+            }
+        }
+
+        // Use this to signal when a identity (that was main) has become of connectivity.
+        public signal void gone_connectivity();
+
+        public bool main_id {
+            get {
+                return this == main_identity_data;
+            }
         }
 
         // handle signals from qspn_manager
@@ -621,6 +641,9 @@ namespace Netsukuku
         public string peer_linklocal;
 
         public QspnArc? qspn_arc;
+        public int64? network_id;
+        public string? prev_peer_mac;
+        public string? prev_peer_linklocal;
 
         public IdentityArc(int local_identity_index, IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)
         {
@@ -629,6 +652,103 @@ namespace Netsukuku
             this.id_arc = id_arc;
 
             qspn_arc = null;
+            network_id = null;
+            prev_peer_mac = null;
+            prev_peer_linklocal = null;
+        }
+    }
+
+    class LocalIPSet : Object
+    {
+        public string global;
+        public string anonymizing;
+        public HashMap<int,string> intern;
+        public string anonymizing_range;
+        public string netmap_range1;
+        public HashMap<int,string> netmap_range2;
+        public HashMap<int,string> netmap_range3;
+        public string netmap_range2_upper;
+        public string netmap_range3_upper;
+        public string netmap_range4;
+
+        public LocalIPSet()
+        {
+            intern = new HashMap<int,string>();
+            netmap_range2 = new HashMap<int,string>();
+            netmap_range3 = new HashMap<int,string>();
+        }
+
+        public LocalIPSet copy()
+        {
+            LocalIPSet ret = new LocalIPSet();
+            ret.global = this.global;
+            ret.anonymizing = this.anonymizing;
+            foreach (int k in this.intern.keys) ret.intern[k] = this.intern[k];
+            ret.anonymizing_range = this.anonymizing_range;
+            ret.netmap_range1 = this.netmap_range1;
+            foreach (int k in this.netmap_range2.keys) ret.netmap_range2[k] = this.netmap_range2[k];
+            foreach (int k in this.netmap_range3.keys) ret.netmap_range3[k] = this.netmap_range3[k];
+            ret.netmap_range2_upper = this.netmap_range2_upper;
+            ret.netmap_range3_upper = this.netmap_range3_upper;
+            ret.netmap_range4 = this.netmap_range4;
+            return ret;
+        }
+    }
+
+    class DestinationIPSetGnode : Object
+    {
+        public string global;
+        public string anonymizing;
+        public HashMap<int,string> intern;
+
+        public DestinationIPSetGnode()
+        {
+            intern = new HashMap<int,string>();
+        }
+
+        public DestinationIPSetGnode copy()
+        {
+            DestinationIPSetGnode ret = new DestinationIPSetGnode();
+            ret.global = this.global;
+            ret.anonymizing = this.anonymizing;
+            foreach (int k in this.intern.keys) ret.intern[k] = this.intern[k];
+            return ret;
+        }
+    }
+
+    class DestinationIPSet : Object
+    {
+        public HashMap<HCoord,DestinationIPSetGnode> gnode;
+
+        public DestinationIPSet()
+        {
+            gnode = new HashMap<HCoord,DestinationIPSetGnode>((x) => 0, (a, b) => a.equals(b));
+        }
+
+        private Gee.List<HCoord> _sorted_gnode_keys;
+        public Gee.List<HCoord> sorted_gnode_keys
+        {
+            get {
+                ArrayList<HCoord> ret = new ArrayList<HCoord>((a, b) => a.equals(b));
+                ret.add_all(gnode.keys);
+                ret.sort((a, b) => {
+                    if (a.lvl > b.lvl) return -1;
+                    if (a.lvl < b.lvl) return 1;
+                    return a.pos - b.pos;
+                });
+                _sorted_gnode_keys = ret;
+                return _sorted_gnode_keys;
+            }
+        }
+
+        public DestinationIPSet copy()
+        {
+            DestinationIPSet ret = new DestinationIPSet();
+            foreach (HCoord hc in gnode.keys)
+            {
+                ret.gnode[hc] = gnode[hc].copy();
+            }
+            return ret;
         }
     }
 }

@@ -28,10 +28,13 @@ using TaskletSystem;
 
 namespace Netsukuku
 {
+    // not in this test
+    /*
     interface IIdentityAwareMissingArcHandler : Object
     {
         public abstract void missing(IdentityData identity_data, IdentityArc identity_arc);
     }
+    */
 
     class StubFactory : Object
     {
@@ -70,6 +73,8 @@ namespace Netsukuku
 
         /* Get a stub for a identity unicast request.
          */
+        // not in this test
+        /*
         public IAddressManagerStub
         get_stub_identity_aware_unicast(
             INeighborhoodArc arc,
@@ -96,10 +101,13 @@ namespace Netsukuku
             NodeID unicast_node_id = ia.id_arc.get_peer_nodeid();
             return get_stub_identity_aware_unicast(arc, identity_data, unicast_node_id, wait_reply);
         }
+        */
 
 
         /* Get a stub for a identity broadcast request.
          */
+        // not in this test
+        /*
         public IAddressManagerStub
         get_stub_identity_aware_broadcast(
             string my_dev,
@@ -124,7 +132,10 @@ namespace Netsukuku
 
             return get_addr_datagram_system(send_pathname, source_id, broadcast_id, src_nic, ack_com);
         }
+        */
 
+        // not in this test
+        /*
         private Gee.List<INeighborhoodArc> get_current_arcs_for_broadcast(string my_dev)
         {
             var ret = new ArrayList<INeighborhoodArc>();
@@ -133,7 +144,10 @@ namespace Netsukuku
                     ret.add(arc.neighborhood_arc);
             return ret;
         }
+        */
 
+        // not in this test
+        /*
         class NodeMissingArcHandlerForIdentityAware : Object
         {
             public NodeMissingArcHandlerForIdentityAware(IIdentityAwareMissingArcHandler identity_missing_handler, int local_identity_index)
@@ -182,10 +196,13 @@ namespace Netsukuku
                 }
             }
         }
+        */
 
         /* The instance of this class is created when the stub factory is invoked to
          * obtain a stub for a message in broadcast on dev my_dev.
          */
+        // not in this test
+        /*
         private class AcknowledgementsCommunicator : Object, IAckCommunicator
         {
             public StubFactory stub_factory;
@@ -254,5 +271,6 @@ namespace Netsukuku
                 }
             }
         }
+        */
     }
 }

@@ -26,6 +26,7 @@ namespace Netsukuku
     void per_identity_qspn_qspn_bootstrap_complete(IdentityData id)
     {
         try {
+            foreach (HCoord hc in id.bootstrap_phase_pending_updates) UpdateGraph.update_destination(id, hc);
             // TODO
         } catch (QspnBootstrapInProgressError e) {assert_not_reached();}
     }
@@ -42,17 +43,46 @@ namespace Netsukuku
 
     void per_identity_qspn_path_added(IdentityData id, IQspnNodePath p)
     {
-        // TODO
+        per_identity_qspn_map_update(id, p);
     }
 
     void per_identity_qspn_path_changed(IdentityData id, IQspnNodePath p)
     {
-        // TODO
+        per_identity_qspn_map_update(id, p);
     }
 
     void per_identity_qspn_path_removed(IdentityData id, IQspnNodePath p)
     {
-        // TODO
+        per_identity_qspn_map_update(id, p);
+    }
+
+    void per_identity_qspn_map_update(IdentityData id, IQspnNodePath p)
+    {
+        HCoord hc = p.i_qspn_get_hops().last().i_qspn_get_hcoord();
+        per_identity_qspn_map_update_hc(id, hc);
+    }
+
+    void per_identity_qspn_map_update_hc(IdentityData id, HCoord hc)
+    {
+        if (hc in id.dest_ip_set.gnode.keys)
+        {
+            QspnManager qspn_mgr = (QspnManager)identity_mgr.get_identity_module(id.nodeid, "qspn");
+            try {
+                qspn_mgr.get_paths_to(hc);
+            } catch (QspnBootstrapInProgressError e) {
+                id.bootstrap_phase_pending_updates.add(hc);
+                return;
+            }
+            UpdateGraph.update_destination(id, hc);
+        }
+    }
+
+    void per_identity_qspn_map_update_hc_reserve(IdentityData id, HCoord hc)
+    {
+        if (hc in id.dest_ip_set.gnode.keys)
+        {
+            id.bootstrap_phase_pending_updates.add(hc);
+        }
     }
 
     void per_identity_qspn_changed_fp(IdentityData id, int l)

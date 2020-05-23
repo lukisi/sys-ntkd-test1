@@ -1,0 +1,129 @@
+/*
+ *  This file is part of Netsukuku.
+ *  Copyright (C) 2017-2019 Luca Dionisi aka lukisi <luca.dionisi@gmail.com>
+ *
+ *  Netsukuku is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Netsukuku is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Netsukuku.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+using Gee;
+using TaskletSystem;
+
+namespace Netsukuku
+{
+    class TableNames : Object
+    {
+        public static TableNames get_singleton()
+        {
+            if (singleton == null) singleton = new TableNames();
+            return singleton;
+        }
+
+        private static TableNames singleton;
+
+        private TableNames()
+        {
+            init_table_names();
+        }
+
+        /* Table-names management
+        ** 
+        */
+
+        private const string RT_TABLES = "/etc/iproute2/rt_tables";
+        private static ArrayList<int> free_tid;
+        private static HashMap<string, ReservedTid> mac_tid;
+        private static void init_table_names()
+        {
+            free_tid = new ArrayList<int>();
+            for (int i = 250; i >= 200; i--) free_tid.add(i);
+            mac_tid = new HashMap<string, ReservedTid>();
+        }
+
+        private class ReservedTid : Object
+        {
+            public ReservedTid(int tid)
+            {
+                this.tid = tid;
+                refcount = 0;
+            }
+            public int tid;
+            public int refcount;
+        }
+
+        public void get_table(int? bid, string peer_mac, out int tid, out string tablename)
+        {
+            tablename = @"ntk_from_$(peer_mac)";
+            if (mac_tid.has_key(peer_mac))
+            {
+                tid = mac_tid[peer_mac].tid;
+                return;
+            }
+            assert(! free_tid.is_empty);
+            tid = free_tid.remove_at(0);
+            print(@"TableNames.get_table=>create_table($(peer_mac))\n");
+            mac_tid[peer_mac] = new ReservedTid(tid);
+            ArrayList<string> cmd = new ArrayList<string>.wrap({
+                @"sed", @"-i", @"s/$(tid) reserved_ntk_from_$(tid)/$(tid) $(tablename)/", RT_TABLES});
+            if (bid != null) fake_cm.single_command_in_block(bid, cmd);
+            else fake_cm.single_command(cmd);
+        }
+
+        public void incref_table(string peer_mac)
+        {
+            print(@"TableNames.incref_table($(peer_mac))\n");
+            assert(mac_tid.has_key(peer_mac));
+            mac_tid[peer_mac].refcount = mac_tid[peer_mac].refcount + 1;
+        }
+
+        public int decref_table(string peer_mac)
+        {
+            print(@"TableNames.decref_table($(peer_mac))\n");
+            assert(mac_tid.has_key(peer_mac));
+            mac_tid[peer_mac].refcount = mac_tid[peer_mac].refcount - 1;
+            print(@"           refcount=$(mac_tid[peer_mac].refcount)\n");
+            return mac_tid[peer_mac].refcount;
+        }
+
+        public void release_table(int? bid, string peer_mac)
+        {
+            print(@"TableNames.release_table($(peer_mac))\n");
+            string tablename = @"ntk_from_$(peer_mac)";
+            assert(mac_tid.has_key(peer_mac));
+            assert(mac_tid[peer_mac].refcount <= 0);
+            int tid = mac_tid[peer_mac].tid;
+            assert(! (tid in free_tid));
+            free_tid.insert(0, tid);
+            mac_tid.unset(peer_mac);
+            ArrayList<string> cmd = new ArrayList<string>.wrap({
+                @"sed", @"-i", @"s/$(tid) $(tablename)/$(tid) reserved_ntk_from_$(tid)/", RT_TABLES});
+            if (bid != null) fake_cm.single_command_in_block(bid, cmd);
+            else fake_cm.single_command(cmd);
+        }
+
+        public void release_all_tables(int? bid) // TODO is this function useful?
+        {
+            foreach (string peer_mac in mac_tid.keys)
+            {
+                int tid = mac_tid[peer_mac].tid;
+                string tablename = @"ntk_from_$(peer_mac)";
+                ArrayList<string> cmd = new ArrayList<string>.wrap({
+                    @"sed", @"-i", @"s/$(tid) $(tablename)/$(tid) reserved_ntk_from_$(tid)/", RT_TABLES});
+                if (bid != null) fake_cm.single_command_in_block(bid, cmd);
+                else fake_cm.single_command(cmd);
+            }
+            free_tid.clear();
+            mac_tid.clear();
+        }
+    }
+}

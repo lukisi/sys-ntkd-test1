@@ -15,6 +15,11 @@ qspn_signals.c
 serializables.c
 enter_network.c
 migrate.c
+identity_ip_commands.c
+identity_ip_compute.c
+table_names.c
+ipv4_compute.c
+update_graph.c
 sys_ntkd_alone_vala.stamp*
 Makefile.in
 aclocal.m4
