@@ -25,6 +25,7 @@ namespace Netsukuku
 {
     void per_identity_qspn_qspn_bootstrap_complete(IdentityData id)
     {
+        print(@"Qspn: [$(printabletime())]: Signal qspn_bootstrap_complete.\n");
         try {
             foreach (HCoord hc in id.bootstrap_phase_pending_updates) UpdateGraph.update_destination(id, hc);
             // TODO
@@ -33,26 +34,31 @@ namespace Netsukuku
 
     void per_identity_qspn_destination_added(IdentityData id, HCoord h)
     {
+        print(@"Qspn: [$(printabletime())]: Signal destination_added.\n");
         // TODO
     }
 
     void per_identity_qspn_destination_removed(IdentityData id, HCoord h)
     {
+        print(@"Qspn: [$(printabletime())]: Signal destination_removed.\n");
         // TODO
     }
 
     void per_identity_qspn_path_added(IdentityData id, IQspnNodePath p)
     {
+        print(@"Qspn: [$(printabletime())]: Signal path_added.\n");
         per_identity_qspn_map_update(id, p);
     }
 
     void per_identity_qspn_path_changed(IdentityData id, IQspnNodePath p)
     {
+        print(@"Qspn: [$(printabletime())]: Signal path_changed.\n");
         per_identity_qspn_map_update(id, p);
     }
 
     void per_identity_qspn_path_removed(IdentityData id, IQspnNodePath p)
     {
+        print(@"Qspn: [$(printabletime())]: Signal path_removed.\n");
         per_identity_qspn_map_update(id, p);
     }
 
@@ -87,31 +93,37 @@ namespace Netsukuku
 
     void per_identity_qspn_changed_fp(IdentityData id, int l)
     {
+        print(@"Qspn: [$(printabletime())]: Signal changed_fp.\n");
         // TODO
     }
 
     void per_identity_qspn_changed_nodes_inside(IdentityData id, int l)
     {
+        print(@"Qspn: [$(printabletime())]: Signal changed_nodes_inside.\n");
         // TODO
     }
 
     void per_identity_qspn_presence_notified(IdentityData id)
     {
+        print(@"Qspn: [$(printabletime())]: Signal presence_notified.\n");
         // TODO
     }
 
     void per_identity_qspn_remove_identity(IdentityData id)
     {
+        print(@"Qspn: [$(printabletime())]: Signal remove_identity.\n");
         // TODO
     }
 
     void per_identity_qspn_arc_removed(IdentityData id, IQspnArc arc, bool bad_link)
     {
+        print(@"Qspn: [$(printabletime())]: Signal arc_removed.\n");
         // TODO
     }
 
     void per_identity_qspn_gnode_splitted(IdentityData id, IQspnArc a, HCoord d, IQspnFingerprint fp)
     {
+        print(@"Qspn: [$(printabletime())]: Signal gnode_splitted.\n");
         // TODO
     }
 }

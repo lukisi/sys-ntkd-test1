@@ -650,6 +650,8 @@ namespace Netsukuku
             this.local_identity_index = local_identity_index;
             this.arc = arc;
             this.id_arc = id_arc;
+            peer_mac = id_arc.get_peer_mac();
+            peer_linklocal = id_arc.get_peer_linklocal();
 
             qspn_arc = null;
             network_id = null;
