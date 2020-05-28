@@ -59,6 +59,8 @@ namespace Netsukuku.EnterNetwork
         new_identity_data.connectivity_to_level = old_identity_data.connectivity_to_level;
         old_identity_data.connectivity_from_level = guest_gnode_level + 1;
         old_identity_data.connectivity_to_level = levels; // after enter, the old id will be dismissed soon anyway.
+        // if old id was main id, then now new id is main id.
+        if (main_identity_data == old_identity_data) main_identity_data = new_identity_data;
 
         // Associate id-arcs of old and new identity.
         Gee.List<IdentityArcPair> arcpairs = new ArrayList<IdentityArcPair>();

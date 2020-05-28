@@ -20,7 +20,7 @@ using Gee;
 using Netsukuku;
 using Netsukuku.Neighborhood;
 using Netsukuku.Identities;
-//using Netsukuku.Qspn;
+using Netsukuku.Qspn;
 using TaskletSystem;
 
 namespace Netsukuku
@@ -39,13 +39,29 @@ namespace Netsukuku
             print(@"    prev_id_arc: nodeid $(prev_id_arc.get_peer_nodeid().id) peer_mac $(prev_id_arc.get_peer_mac()) peer_linklocal $(prev_id_arc.get_peer_linklocal())\n");
 
         // Retrieve my identity.
-        IdentityData identity_data = find_local_identity(id);
+        IdentityData identity_data = find_or_create_local_identity(id);
         // Create IdentityArc.
         IdentityArc ia = new IdentityArc(identity_data.local_identity_index, arc, id_arc);
         // Add to the list.
         identity_data.identity_arcs.add(ia);
 
-        // TODO
+        // If needed, pass it to the Hooking module.
+        if (prev_id_arc == null)
+        {
+            print(@" [will be] Passing it to the module Hooking.\n");
+            //while (identity_data.hook_mgr == null) tasklet.ms_wait(10);
+            //ia.hooking_arc = new HookingIdentityArc(ia);
+            //identity_data.hook_mgr.add_arc(ia.hooking_arc);
+        }
+
+        // If we know the previous id-arc, copy the network_id
+        if (prev_id_arc != null)
+        {
+            // Retrieve previous IdentityArc.
+            IdentityArc prev_ia = find_identity_arc(prev_id_arc);
+            if (ia == null) debug(@"Could not find IdentityArc.");
+            else ia.network_id = prev_ia.network_id;
+        }
         */
     }
 
@@ -60,7 +76,7 @@ namespace Netsukuku
         print(@"    only_neighbour_migrated: $(only_neighbour_migrated)\n");
 
         // Retrieve my identity.
-        IdentityData identity_data = find_local_identity(id);
+        IdentityData identity_data = find_or_create_local_identity(id);
         // Retrieve IdentityArc.
         IdentityArc ia = identity_data.identity_arcs_find(arc, id_arc);
 
@@ -70,7 +86,20 @@ namespace Netsukuku
         ia.peer_mac = ia.id_arc.get_peer_mac();
         ia.peer_linklocal = ia.id_arc.get_peer_linklocal();
 
-        // TODO
+        // TODO If a Qspn arc exists for it, change routes in kernel tables.
+
+        // This signal might happen when the module Identities of this system is doing `add_identity` on
+        //  this very identity (identity_data).
+        //  In this case the program does some further operations on its own (see EnterNetwork.enter or Migrate.migrate).
+        //  But this might also happen when only our neighbour is doing `add_identity`.
+        if (only_neighbour_migrated)
+        {
+            // TODO In this case we must do some work if we have a qspn_arc on this identity_arc.
+
+            // After that, we need no more to keep old values.
+            ia.prev_peer_mac = null;
+            ia.prev_peer_linklocal = null;
+        }
         */
     }
 
@@ -83,7 +112,20 @@ namespace Netsukuku
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
 
-        // TODO
+        // Retrieve my identity.
+        IdentityData identity_data = find_or_create_local_identity(id);
+        // Retrieve IdentityArc.
+        IdentityArc ia = find_identity_arc_by_peer_nodeid(identity_data, arc, peer_nodeid);
+        if (ia == null) debug(@"Could not find IdentityArc.");
+        else
+        {
+            if (ia.qspn_arc != null)
+            {
+                // Remove Qspn arc.
+                QspnManager qspn_mgr = (QspnManager)identity_mgr.get_identity_module(id, "qspn");
+                qspn_mgr.arc_remove(ia.qspn_arc);
+            }
+        }
         */
     }
 
@@ -96,7 +138,22 @@ namespace Netsukuku
         print(@"    my identity: nodeid $(id.id)\n");
         print(@"    peer_nodeid: nodeid $(peer_nodeid.id)\n");
 
-        // TODO
+        // Retrieve my identity.
+        IdentityData identity_data = find_or_create_local_identity(id);
+        // Retrieve IdentityArc.
+        IdentityArc ia = find_identity_arc_by_peer_nodeid(identity_data, arc, peer_nodeid);
+        if (ia == null) debug(@"Could not find IdentityArc.");
+        else
+        {
+            if (ia.qspn_arc != null)
+            {
+                ia.qspn_arc = null;
+                // Remove from the list.
+                identity_data.identity_arcs.remove(ia);
+                // Then remove kernel tables.
+                IpCommands.removed_arc(identity_data, ia.peer_mac);
+            }
+        }
         */
     }
 

@@ -794,6 +794,8 @@ namespace Netsukuku.IpCommands
 
         foreach (string m in peermacs)
         {
+            error("not in this test");
+            /*
             string table;
             int tid;
             tn.get_table(null, m, out tid, out table);
@@ -806,6 +808,7 @@ namespace Netsukuku.IpCommands
                 @"--mac-source", @"$(m)", @"-j", @"MARK", @"--set-mark", @"$(tid)"}));
             assert(tn.decref_table(m) <= 0);
             tn.release_table(null, m);
+            */
         }
 
         if (subnetlevel > 0)
