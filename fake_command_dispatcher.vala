@@ -10,9 +10,17 @@ namespace Netsukuku
             command_dispatcher = tasklet.create_dispatchable_tasklet();
             blocks = new HashMap<int, BeginBlockTasklet>();
             next_block_id = 0;
+            all_commands = new ArrayList<string>();
         }
 
         private DispatchableTasklet command_dispatcher;
+        private ArrayList<string> all_commands;
+        public ArrayList<string> list_all_commands
+        {
+            get {
+                return all_commands;
+            }
+        }
 
         // Single command
 
@@ -37,6 +45,7 @@ namespace Netsukuku
         {
             string cmd = cmd_repr(cmd_args);
             print(@"$$ $(cmd)\n");
+            all_commands.add(cmd);
             // simulate a command execution, which could take some time in the current tasklet.
             tasklet.ms_wait(10);
         }

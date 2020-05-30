@@ -311,6 +311,8 @@ namespace Netsukuku
             fake_cm.single_command_in_block(bid, new ArrayList<string>.wrap({
                 @"sysctl", @"net.ipv4.conf.$(dev).arp_announce=2"}));
             fake_cm.single_command_in_block(bid, new ArrayList<string>.wrap({
+                @"ip", @"link", @"set", @"dev", @"$(dev)", @"address", @"$(mac)"}));
+            fake_cm.single_command_in_block(bid, new ArrayList<string>.wrap({
                 @"ip", @"link", @"set", @"dev", @"$(dev)", @"up"}));
             fake_cm.end_block(bid);
 
@@ -365,6 +367,7 @@ namespace Netsukuku
             first_identity_data.my_naddr,
             first_identity_data.my_fp,
             new QspnStubFactory(first_identity_data.local_identity_index));
+        identity_mgr.set_identity_module(first_identity_data.nodeid, "qspn", first_identity_data.qspn_mgr);
         // immediately after creation, connect to signals.
         first_identity_data.qspn_mgr.arc_removed.connect(first_identity_data.arc_removed);
         first_identity_data.qspn_mgr.changed_fp.connect(first_identity_data.changed_fp);
@@ -486,6 +489,11 @@ namespace Netsukuku
         // Then we destroy the object NeighborhoodManager.
         neighborhood_mgr = null;
         tasklet.ms_wait(100);
+
+        // print all commands from fake_cm
+        print("\n=== all commands ===\n");
+        foreach (string c in fake_cm.list_all_commands) print(@"$(c)\n");
+        print("=== END all commands ===\n");
 
         PthTaskletImplementer.kill();
 

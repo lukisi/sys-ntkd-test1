@@ -40,7 +40,7 @@ namespace Netsukuku
         ** 
         */
 
-        private const string RT_TABLES = "/etc/iproute2/rt_tables";
+        private const string RT_TABLES = "/etc/iproute2/rt_tables.d/ntk.conf";
         private static ArrayList<int> free_tid;
         private static HashMap<string, ReservedTid> mac_tid;
         private static void init_table_names()
