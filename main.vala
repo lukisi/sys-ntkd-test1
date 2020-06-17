@@ -508,11 +508,10 @@ namespace Netsukuku
 
     void stop_rpc(string dev)
     {
-        string linklocal = handlednic_map[dev].linklocal;
+        neighborhood_mgr.stop_monitor(dev);
         PseudoNetworkInterface pseudonic = pseudonic_map[dev];
         skeleton_factory.stop_stream_system_listen(pseudonic.st_listen_pathname);
         print(@"stopped stream_system_listen $(pseudonic.st_listen_pathname).\n");
-        neighborhood_mgr.stop_monitor(dev);
         skeleton_factory.stop_datagram_system_listen(pseudonic.listen_pathname);
         print(@"stopped datagram_system_listen $(pseudonic.listen_pathname).\n");
         pseudonic_map.unset(dev);
