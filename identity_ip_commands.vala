@@ -24,6 +24,7 @@ namespace Netsukuku.IpCommands
 {
     void main_start(IdentityData id)
     {
+        print(@"[$(printabletime())]: IpCommands.main_start: started.\n");
         ArrayList<string> devs = new ArrayList<string>();
         foreach (string dev in handlednic_map.keys) devs.add(dev);
         LocalIPSet local_ip_set = id.local_ip_set;
@@ -102,12 +103,14 @@ namespace Netsukuku.IpCommands
                     @"ip", @"route", @"add", @"unreachable", @"$(dest.intern[k])", @"table", @"ntk"}));
             }
         }
+        print(@"[$(printabletime())]: IpCommands.main_start: finished.\n");
     }
 
     void main_dup(IdentityData id, int host_gnode_level, int guest_gnode_level,
                   LocalIPSet prev_local_ip_set, DestinationIPSet prev_dest_ip_set,
                   Gee.List<string> prev_peermacs, Gee.List<string> new_peermacs, Gee.List<string> both_peermacs)
     {
+        print(@"[$(printabletime())]: IpCommands.main_dup: started.\n");
         ArrayList<string> devs = new ArrayList<string>();
         foreach (string dev in handlednic_map.keys) devs.add(dev);
         LocalIPSet local_ip_set = id.local_ip_set;
@@ -331,6 +334,8 @@ namespace Netsukuku.IpCommands
             }
         }
 
+        print(@"[$(printabletime())]: IpCommands.main_dup: finished.\n");
+        print("                                   reserving map_updates.\n");
         foreach (HCoord hc in dest_ip_set.sorted_gnode_keys) if (hc.lvl < guest_gnode_level)
             per_identity_qspn_map_update_hc_reserve(id, hc);
     }
@@ -343,8 +348,17 @@ namespace Netsukuku.IpCommands
         fake_cm.single_command(cmd);
     }
 
+    void cat_cmd_in_block(int bid, Gee.List<string> prefix_cmd, string[] cmd_array)
+    {
+        ArrayList<string> cmd = new ArrayList<string>();
+        cmd.add_all(prefix_cmd);
+        cmd.add_all_array(cmd_array);
+        fake_cm.single_command_in_block(bid, cmd);
+    }
+
     void gone_connectivity(IdentityData id, Gee.List<string> peermacs)
     {
+        print(@"[$(printabletime())]: IpCommands.gone_connectivity: started.\n");
         DestinationIPSet dest_ip_set = id.dest_ip_set;
         assert(! id.main_id);
         ArrayList<string> prefix_cmd = new ArrayList<string>.wrap({
@@ -376,6 +390,8 @@ namespace Netsukuku.IpCommands
             }
         }
 
+        print(@"[$(printabletime())]: IpCommands.gone_connectivity: finished.\n");
+        print("                                   starting map_updates.\n");
         foreach (HCoord hc in dest_ip_set.sorted_gnode_keys) per_identity_qspn_map_update_hc(id, hc);
     }
 
@@ -383,6 +399,7 @@ namespace Netsukuku.IpCommands
                   DestinationIPSet prev_dest_ip_set,
                   Gee.List<string> prev_peermacs, Gee.List<string> new_peermacs, Gee.List<string> both_peermacs)
     {
+        print(@"[$(printabletime())]: IpCommands.connectivity_dup: started.\n");
         DestinationIPSet dest_ip_set = id.dest_ip_set;
         assert(! id.main_id);
         ArrayList<string> prefix_cmd = new ArrayList<string>.wrap({
@@ -469,50 +486,59 @@ namespace Netsukuku.IpCommands
             }
         }
 
+        print(@"[$(printabletime())]: IpCommands.connectivity_dup: finished.\n");
+        print("                                   reserving map_updates.\n");
         foreach (HCoord hc in dest_ip_set.sorted_gnode_keys) if (hc.lvl < guest_gnode_level)
             per_identity_qspn_map_update_hc_reserve(id, hc);
     }
 
     void new_arc(IdentityData id, string new_peermac)
     {
+        print(@"[$(printabletime())]: IpCommands.new_arc: started.\n");
         DestinationIPSet dest_ip_set = id.dest_ip_set;
         ArrayList<string> prefix_cmd = new ArrayList<string>();
         if (! id.main_id)
         prefix_cmd.add_all_array({
             @"ip", @"netns", @"exec", @"$(id.network_namespace)"});
 
+        // commands in block
+        int bid = fake_cm.begin_block();
         string m = new_peermac;
         {
             string table;
             int tid;
-            tn.get_table(null, m, out tid, out table);
-            cat_cmd(prefix_cmd, {
+            tn.get_table(bid, m, out tid, out table);
+            cat_cmd_in_block(bid, prefix_cmd, {
                 @"iptables", @"-t", @"mangle", @"-A", @"PREROUTING", @"-m", @"mac",
                 @"--mac-source", @"$(m)", @"-j", @"MARK", @"--set-mark", @"$(tid)"});
-            cat_cmd(prefix_cmd, {
+            cat_cmd_in_block(bid, prefix_cmd, {
                 @"ip", @"rule", @"add", @"fwmark", @"$(tid)", @"table", @"$(table)"});
             tn.incref_table(m);
             foreach (HCoord hc in dest_ip_set.sorted_gnode_keys)
             {
                 DestinationIPSetGnode dest = dest_ip_set.gnode[hc];
-                cat_cmd(prefix_cmd, {
+                cat_cmd_in_block(bid, prefix_cmd, {
                     @"ip", @"route", @"add", @"unreachable", @"$(dest.global)", @"table", @"$(table)"});
-                cat_cmd(prefix_cmd, {
+                cat_cmd_in_block(bid, prefix_cmd, {
                     @"ip", @"route", @"add", @"unreachable", @"$(dest.anonymizing)", @"table", @"$(table)"});
                 for (int k = levels-1; k >= hc.lvl+1; k--)
                 {
-                    cat_cmd(prefix_cmd, {
+                    cat_cmd_in_block(bid, prefix_cmd, {
                         @"ip", @"route", @"add", @"unreachable", @"$(dest.intern[k])", @"table", @"$(table)"});
                 }
             }
         }
+        fake_cm.end_block(bid);
 
+        print(@"[$(printabletime())]: IpCommands.new_arc: finished.\n");
+        print("                                   starting map_updates.\n");
         foreach (HCoord hc in dest_ip_set.sorted_gnode_keys) per_identity_qspn_map_update_hc(id, hc);
     }
 
     void map_update(IdentityData id, HCoord hc, Gee.List<IQspnNodePath> paths,
                     Gee.List<string> peer_mac_set, Gee.List<HCoord> peer_hc_set)
     {
+        print(@"[$(printabletime())]: IpCommands.map_update ($(hc.lvl),$(hc.pos)): started.\n");
         LocalIPSet local_ip_set = id.local_ip_set;
         DestinationIPSet dest_ip_set = id.dest_ip_set;
         ArrayList<string> prefix_cmd = new ArrayList<string>();
@@ -600,6 +626,7 @@ namespace Netsukuku.IpCommands
                 }
             }
         }
+        print(@"[$(printabletime())]: IpCommands.map_update: finished.\n");
     }
 
     IQspnNodePath? best_path(Gee.List<IQspnNodePath> paths)
@@ -627,6 +654,7 @@ namespace Netsukuku.IpCommands
                      Gee.List<string> peer_mac_set, Gee.List<HCoord> peer_hc_set, IQspnArc changed_arc_qspn,
                      string changed_arc_prev_mac, string changed_arc_new_mac, HCoord changed_arc_peer_hc)
     {
+        print(@"[$(printabletime())]: IpCommands.changed_arc: started.\n");
         LocalIPSet local_ip_set = id.local_ip_set;
         DestinationIPSet dest_ip_set = id.dest_ip_set;
         ArrayList<string> prefix_cmd = new ArrayList<string>();
@@ -748,10 +776,12 @@ namespace Netsukuku.IpCommands
                 @"--mac-source", @"$(m)", @"-j", @"MARK", @"--set-mark", @"$(tid)"});
             if (tn.decref_table(m) <= 0) tn.release_table(null, m);
         }
+        print(@"[$(printabletime())]: IpCommands.changed_arc: finished.\n");
     }
 
     void removed_arc(IdentityData id, string peermac)
     {
+        print(@"[$(printabletime())]: IpCommands.removed_arc: started.\n");
         ArrayList<string> prefix_cmd = new ArrayList<string>();
         if (! id.main_id)
         prefix_cmd.add_all_array({
@@ -771,17 +801,21 @@ namespace Netsukuku.IpCommands
                 @"--mac-source", @"$(m)", @"-j", @"MARK", @"--set-mark", @"$(tid)"});
             if (tn.decref_table(m) <= 0) tn.release_table(null, m);
         }
+        print(@"[$(printabletime())]: IpCommands.removed_arc: finished.\n");
     }
 
     void connectivity_stop(IdentityData id, Gee.List<string> peermacs)
     {
+        print(@"[$(printabletime())]: IpCommands.connectivity_stop: started.\n");
         print(@"IpCommands.connectivity_stop: peermacs has $(peermacs.size) items.\n");
         foreach (string m in peermacs)
             if (tn.decref_table(m) <= 0) tn.release_table(null, m);
+        print(@"[$(printabletime())]: IpCommands.connectivity_stop: finished.\n");
     }
 
     void main_stop(IdentityData id, Gee.List<string> peermacs)
     {
+        print(@"[$(printabletime())]: IpCommands.main_stop: started.\n");
         print(@"IpCommands.main_stop: peermacs has $(peermacs.size) items.\n");
         ArrayList<string> devs = new ArrayList<string>();
         foreach (string dev in handlednic_map.keys) devs.add(dev);
@@ -866,5 +900,6 @@ namespace Netsukuku.IpCommands
         }
         fake_cm.single_command(new ArrayList<string>.wrap({
             @"ip", @"address", @"del", @"$(local_ip_set.intern[0])/32", @"dev", @"lo"}));
+        print(@"[$(printabletime())]: IpCommands.main_stop: finished.\n");
     }
 }
