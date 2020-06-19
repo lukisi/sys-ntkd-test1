@@ -27,6 +27,7 @@ sys_ntkd_alone_SOURCES =  \
 	identities_signals.vala \
 	qspn_helpers.vala \
 	qspn_signals.vala \
+	peers_helpers.vala \
 	identity_ip_commands.vala \
 	identity_ip_compute.vala \
 	table_names.vala \

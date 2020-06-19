@@ -12,6 +12,7 @@ identities_helpers.c
 identities_signals.c
 qspn_helpers.c
 qspn_signals.c
+peers_helpers.c
 serializables.c
 enter_network.c
 migrate.c

@@ -47,7 +47,7 @@ namespace Netsukuku
             print(@"$$ $(cmd)\n");
             all_commands.add(cmd);
             // simulate a command execution, which could take some time in the current tasklet.
-            tasklet.ms_wait(10);
+            tasklet.ms_wait(1);
         }
 
         // Block of commands

@@ -21,6 +21,7 @@ using TaskletSystem;
 using Netsukuku.Neighborhood;
 using Netsukuku.Identities;
 using Netsukuku.Qspn;
+using Netsukuku.PeerServices;
 
 namespace Netsukuku
 {
@@ -228,6 +229,7 @@ namespace Netsukuku
         NeighborhoodManager.init(tasklet);
         IdentityManager.init(tasklet);
         QspnManager.init(tasklet, max_paths, max_common_hops_ratio, arc_timeout, new ThresholdCalculator());
+        PeersManager.init(tasklet);
         typeof(WholeNodeSourceID).class_peek();
         typeof(WholeNodeUnicastID).class_peek();
         typeof(EveryWholeNodeBroadcastID).class_peek();
@@ -246,6 +248,7 @@ namespace Netsukuku
         NeighborhoodManager.init_rngen(null, seed_prn);
         IdentityManager.init_rngen(null, seed_prn);
         QspnManager.init_rngen(null, seed_prn);
+        PeersManager.init_rngen(null, seed_prn);
 
         // If first address is random:
         if (firstaddr == "")
@@ -384,6 +387,12 @@ namespace Netsukuku
 
         // First identity is immediately bootstrapped.
         while (! first_identity_data.qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(1);
+        // Then we can instantiate p2p services
+        first_identity_data.peers_mgr = new PeersManager(null, 0, 0,
+            new PeersMapPaths(first_identity_data),
+            new PeersBackStubFactory(first_identity_data),
+            new PeersNeighborsFactory(first_identity_data));
+        identity_mgr.set_identity_module(first_identity_data.nodeid, "peers", first_identity_data.peers_mgr);
 
         first_identity_data = null;
 
