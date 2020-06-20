@@ -39,7 +39,9 @@ namespace Netsukuku
         DateTime now = new DateTime.now();
         int min = now.get_minute();
         double sec = now.get_seconds();
-        return @"$(min):$(sec)".substring(0, 12);
+        string ret = @"$(min):$(sec)";
+        if (ret.length > 12) ret = ret.substring(0, 12);
+        return ret;
     }
 
     string topology;
