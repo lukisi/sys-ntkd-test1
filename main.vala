@@ -36,13 +36,10 @@ namespace Netsukuku
 
     string printabletime()
     {
-        TimeVal now = TimeVal();
-        now.get_current_time();
-        string s_usec = @"$(now.tv_usec + 1000000)";
-        s_usec = s_usec.substring(1);
-        string s_sec = @"$(now.tv_sec)";
-        s_sec = s_sec.substring(s_sec.length-3);
-        return @"$(s_sec).$(s_usec)";
+        DateTime now = new DateTime.now();
+        int min = now.get_minute();
+        double sec = now.get_seconds();
+        return @"$(min):$(sec)".substring(0, 12);
     }
 
     string topology;
