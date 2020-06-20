@@ -389,9 +389,9 @@ namespace Netsukuku
         while (! first_identity_data.qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(1);
         // Then we can instantiate p2p services
         first_identity_data.peers_mgr = new PeersManager(null, 0, 0,
-            new PeersMapPaths(first_identity_data),
-            new PeersBackStubFactory(first_identity_data),
-            new PeersNeighborsFactory(first_identity_data));
+            new PeersMapPaths(first_identity_data.local_identity_index),
+            new PeersBackStubFactory(first_identity_data.local_identity_index),
+            new PeersNeighborsFactory(first_identity_data.local_identity_index));
         identity_mgr.set_identity_module(first_identity_data.nodeid, "peers", first_identity_data.peers_mgr);
 
         first_identity_data = null;
@@ -590,6 +590,7 @@ namespace Netsukuku
             dest_ip_set = null;
             bootstrap_phase_pending_updates = new ArrayList<HCoord>();
             qspn_mgr = null;
+            peers_mgr = null;
         }
 
         public int local_identity_index;
@@ -603,6 +604,7 @@ namespace Netsukuku
         public Gee.List<HCoord> bootstrap_phase_pending_updates;
 
         public QspnManager qspn_mgr;
+        public PeersManager peers_mgr;
 
         public ArrayList<IdentityArc> identity_arcs;
         public IdentityArc? identity_arcs_find(IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)

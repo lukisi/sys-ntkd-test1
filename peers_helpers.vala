@@ -28,11 +28,19 @@ namespace Netsukuku
 {
     class PeersMapPaths : Object, IPeersMapPaths
     {
-        public PeersMapPaths(IdentityData identity_data)
+        public PeersMapPaths(int local_identity_index)
         {
-            this.identity_data = identity_data;
+            this.local_identity_index = local_identity_index;
         }
-        private weak IdentityData identity_data;
+        private int local_identity_index;
+        private IdentityData? _identity_data;
+        public IdentityData identity_data {
+            get {
+                _identity_data = find_local_identity_by_index(local_identity_index);
+                if (_identity_data == null) tasklet.exit_tasklet();
+                return _identity_data;
+            }
+        }
 
         public int i_peers_get_levels()
         {
@@ -72,6 +80,8 @@ namespace Netsukuku
         public IPeersManagerStub i_peers_gateway(int level, int pos, CallerInfo? received_from = null, IPeersManagerStub? failed = null)
         throws PeersNonexistentDestinationError
         {
+            error("not in this test");
+            /*
             // If there is a (previous) failed stub, remove the physical arc it was based on.
             if (failed != null)
             {
@@ -132,10 +142,13 @@ namespace Netsukuku
             PeersManagerStubHolder ret = new PeersManagerStubHolder(addrstub);
             ret.neighborhood_arc = ((IdmgmtArc)gw_ia.arc).neighborhood_arc;
             return ret;
+            */
         }
 
         public IPeersManagerStub? i_peers_neighbor_at_level(int level, IPeersManagerStub? failed = null)
         {
+            error("not in this test");
+            /*
             // If there is a (previous) failed stub, remove the physical arc it was based on.
             if (failed != null)
             {
@@ -168,35 +181,57 @@ namespace Netsukuku
                 }
             }
             return ret;
+            */
         }
     }
 
     class PeersBackStubFactory : Object, IPeersBackStubFactory
     {
-        public PeersBackStubFactory(IdentityData identity_data)
+        public PeersBackStubFactory(int local_identity_index)
         {
-            this.identity_data = identity_data;
+            this.local_identity_index = local_identity_index;
         }
-        private weak IdentityData identity_data;
+        private int local_identity_index;
+        private IdentityData? _identity_data;
+        public IdentityData identity_data {
+            get {
+                _identity_data = find_local_identity_by_index(local_identity_index);
+                if (_identity_data == null) tasklet.exit_tasklet();
+                return _identity_data;
+            }
+        }
 
         public IPeersManagerStub i_peers_get_tcp_inside(Gee.List<int> positions)
         {
+            error("not in this test");
+            /*
             IAddressManagerStub addrstub = stub_factory.get_stub_main_identity_unicast_inside_gnode(positions);
             PeersManagerStubHolder ret = new PeersManagerStubHolder(addrstub);
             return ret;
+            */
         }
     }
 
     class PeersNeighborsFactory : Object, IPeersNeighborsFactory
     {
-        public PeersNeighborsFactory(IdentityData identity_data)
+        public PeersNeighborsFactory(int local_identity_index)
         {
-            this.identity_data = identity_data;
+            this.local_identity_index = local_identity_index;
         }
-        private weak IdentityData identity_data;
+        private int local_identity_index;
+        private IdentityData? _identity_data;
+        public IdentityData identity_data {
+            get {
+                _identity_data = find_local_identity_by_index(local_identity_index);
+                if (_identity_data == null) tasklet.exit_tasklet();
+                return _identity_data;
+            }
+        }
 
         public IPeersManagerStub i_peers_get_broadcast(IPeersMissingArcHandler missing_handler)
         {
+            error("not in this test");
+            /*
             ArrayList<NodeID> broadcast_node_id_set = new ArrayList<NodeID>();
             foreach (IdentityArc ia in identity_data.identity_arcs)
             {
@@ -212,17 +247,22 @@ namespace Netsukuku
                 identity_missing_handler);
             PeersManagerStubHolder ret = new PeersManagerStubHolder(addrstub);
             return ret;
+            */
         }
 
         public IPeersManagerStub i_peers_get_tcp(IPeersArc arc)
         {
+            error("not in this test");
+            /*
             IdentityArc ia = ((PeersArc)arc).ia;
             IAddressManagerStub addrstub = stub_factory.get_stub_identity_aware_unicast_from_ia(ia, true);
             PeersManagerStubHolder ret = new PeersManagerStubHolder(addrstub);
             return ret;
+            */
         }
     }
 
+    /*  Not in this test
     class MissingArcHandlerForPeers : Object, IIdentityAwareMissingArcHandler
     {
         public MissingArcHandlerForPeers(IPeersMissingArcHandler peers_missing)
@@ -250,4 +290,5 @@ namespace Netsukuku
         }
         public weak IdentityArc ia;
     }
+    */
 }
