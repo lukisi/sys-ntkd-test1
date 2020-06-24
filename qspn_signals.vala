@@ -28,7 +28,7 @@ namespace Netsukuku
         print(@"Qspn: [$(printabletime())]: Signal qspn_bootstrap_complete.\n");
         try {
             foreach (HCoord hc in id.bootstrap_phase_pending_updates) UpdateGraph.update_destination(id, hc);
-            // TODO
+            // TODO e.g. create peers_mgr and services
         } catch (QspnBootstrapInProgressError e) {assert_not_reached();}
     }
 

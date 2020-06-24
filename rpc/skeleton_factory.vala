@@ -392,7 +392,13 @@ namespace Netsukuku
             public unowned IPeersManagerSkeleton
             peers_manager_getter()
             {
-                error("not in this test");
+                // member peers_mgr of identity_data.
+                if (identity_data.peers_mgr == null)
+                {
+                    warning(@"IdentitySkeleton.peers_manager_getter: id $(identity_data.nodeid.id) has peers_mgr NULL yet. Abort responding.");
+                    tasklet.exit_tasklet(null);
+                }
+                return identity_data.peers_mgr;
             }
 
             public unowned ICoordinatorManagerSkeleton
