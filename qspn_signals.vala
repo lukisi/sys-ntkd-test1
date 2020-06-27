@@ -1,6 +1,6 @@
 /*
  *  This file is part of Netsukuku.
- *  Copyright (C) 2017-2019 Luca Dionisi aka lukisi <luca.dionisi@gmail.com>
+ *  Copyright (C) 2017-2020 Luca Dionisi aka lukisi <luca.dionisi@gmail.com>
  *
  *  Netsukuku is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,17 +18,44 @@
 
 using Gee;
 using Netsukuku;
+using Netsukuku.Neighborhood;
+using Netsukuku.Identities;
 using Netsukuku.Qspn;
+using Netsukuku.PeerServices;
+using Netsukuku.Coordinator;
 using TaskletSystem;
 
 namespace Netsukuku
 {
     void per_identity_qspn_qspn_bootstrap_complete(IdentityData id)
     {
-        print(@"Qspn: [$(printabletime())]: Signal qspn_bootstrap_complete.\n");
         try {
+            Fingerprint fp_levels = (Fingerprint)(id.qspn_mgr.get_fingerprint(levels));
+            print(@"Qspn: [$(printabletime())]: Signal qspn_bootstrap_complete: my id $(id.nodeid.id) is in network_id $(fp_levels.id).\n");
+
             foreach (HCoord hc in id.bootstrap_phase_pending_updates) UpdateGraph.update_destination(id, hc);
-            // TODO e.g. create peers_mgr and services
+
+            /* TODO
+            if (id.on_bootstrap_complete_do_create_peers_manager)
+            {
+                // Then we can instantiate p2p services
+                id.peers_mgr = new PeersManager(
+                    id.on_bootstrap_complete_create_peers_manager_prev_peers_mgr,
+                    id.on_bootstrap_complete_create_peers_manager_guest_gnode_level,
+                    id.on_bootstrap_complete_create_peers_manager_host_gnode_level,
+                    new PeersMapPaths(id),
+                    new PeersBackStubFactory(id),
+                    new PeersNeighborsFactory(id));
+                identity_mgr.set_identity_module(id.nodeid, "peers", id.peers_mgr);
+
+                id.coord_mgr.bootstrap_completed(
+                    id.peers_mgr,
+                    new CoordinatorMap(id),
+                    id.main_id);
+                if (id.main_id)
+                    id.gone_connectivity.connect(id.handle_gone_connectivity_for_coord);
+            }
+            */
         } catch (QspnBootstrapInProgressError e) {assert_not_reached();}
     }
 

@@ -5,6 +5,7 @@ SUBDIRS = \
 	neighborhood \
 	identities \
 	qspn \
+	coordinator \
 	$(NULL)
 
 bin_PROGRAMS =  \
@@ -28,6 +29,7 @@ sys_ntkd_alone_SOURCES =  \
 	qspn_helpers.vala \
 	qspn_signals.vala \
 	peers_helpers.vala \
+	coordinator_helpers.vala \
 	identity_ip_commands.vala \
 	identity_ip_compute.vala \
 	table_names.vala \
@@ -36,6 +38,7 @@ sys_ntkd_alone_SOURCES =  \
 	neighborhood/neighborhood.vapi \
 	identities/identities.vapi \
 	qspn/qspn.vapi \
+	coordinator/coord.vapi \
 	$(NULL)
 
 #	enter_network.vala \
@@ -70,6 +73,7 @@ sys_ntkd_alone_CPPFLAGS = \
 	-I$(srcdir)/neighborhood \
 	-I$(srcdir)/identities \
 	-I$(srcdir)/qspn \
+	-I$(srcdir)/coordinator \
 	$(NULL)
 
 sys_ntkd_alone_LDADD = \
@@ -84,5 +88,6 @@ sys_ntkd_alone_LDADD = \
 	$(builddir)/neighborhood/libneighborhood.la \
 	$(builddir)/identities/libidentities.la \
 	$(builddir)/qspn/libqspn.la \
+	$(builddir)/coordinator/libcoord.la \
 	$(NULL)
 

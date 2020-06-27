@@ -7,3 +7,6 @@
 [submodule "qspn"]
 	path = qspn
 	url = /home/luca/github/qspn
+[submodule "coordinator"]
+	path = coordinator
+	url = /home/luca/github/coordinator

@@ -22,6 +22,7 @@ using Netsukuku.Neighborhood;
 using Netsukuku.Identities;
 using Netsukuku.Qspn;
 using Netsukuku.PeerServices;
+using Netsukuku.Coordinator;
 
 namespace Netsukuku
 {
@@ -229,6 +230,7 @@ namespace Netsukuku
         IdentityManager.init(tasklet);
         QspnManager.init(tasklet, max_paths, max_common_hops_ratio, arc_timeout, new ThresholdCalculator());
         PeersManager.init(tasklet);
+        CoordinatorManager.init(tasklet);
         typeof(WholeNodeSourceID).class_peek();
         typeof(WholeNodeUnicastID).class_peek();
         typeof(EveryWholeNodeBroadcastID).class_peek();
@@ -248,6 +250,7 @@ namespace Netsukuku
         IdentityManager.init_rngen(null, seed_prn);
         QspnManager.init_rngen(null, seed_prn);
         PeersManager.init_rngen(null, seed_prn);
+        CoordinatorManager.init_rngen(null, seed_prn);
 
         // If first address is random:
         if (firstaddr == "")
@@ -392,6 +395,23 @@ namespace Netsukuku
             new PeersBackStubFactory(first_identity_data.local_identity_index),
             new PeersNeighborsFactory(first_identity_data.local_identity_index));
         identity_mgr.set_identity_module(first_identity_data.nodeid, "peers", first_identity_data.peers_mgr);
+
+        // CoordinatorManager
+        first_identity_data.coord_mgr = new CoordinatorManager(gsizes,
+            new CoordinatorEvaluateEnterHandler(first_identity_data.local_identity_index),
+            new CoordinatorBeginEnterHandler(first_identity_data.local_identity_index),
+            new CoordinatorCompletedEnterHandler(first_identity_data.local_identity_index),
+            new CoordinatorAbortEnterHandler(first_identity_data.local_identity_index),
+            new CoordinatorPropagationHandler(first_identity_data.local_identity_index),
+            new CoordinatorStubFactory(first_identity_data.local_identity_index),
+            null, null, null);
+        identity_mgr.set_identity_module(first_identity_data.nodeid, "coordinator", first_identity_data.coord_mgr);
+        first_identity_data.coord_mgr.bootstrap_completed(
+            first_identity_data.peers_mgr,
+            new CoordinatorMap(first_identity_data.local_identity_index),
+            first_identity_data.main_id);
+        if (first_identity_data.main_id)
+            first_identity_data.gone_connectivity.connect(first_identity_data.handle_gone_connectivity_for_coord);
 
         first_identity_data = null;
 
@@ -590,6 +610,7 @@ namespace Netsukuku
             bootstrap_phase_pending_updates = new ArrayList<HCoord>();
             qspn_mgr = null;
             peers_mgr = null;
+            coord_mgr = null;
         }
 
         public int local_identity_index;
@@ -604,6 +625,7 @@ namespace Netsukuku
 
         public QspnManager qspn_mgr;
         public PeersManager peers_mgr;
+        public CoordinatorManager coord_mgr;
 
         public ArrayList<IdentityArc> identity_arcs;
         public IdentityArc? identity_arcs_find(IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)
@@ -628,6 +650,12 @@ namespace Netsukuku
 
         // Use this to signal when a identity (that was main) has become of connectivity.
         public signal void gone_connectivity();
+
+        public void handle_gone_connectivity_for_coord()
+        {
+            coord_mgr.gone_connectivity();
+            gone_connectivity.disconnect(handle_gone_connectivity_for_coord);
+        }
 
         public bool main_id {
             get {
