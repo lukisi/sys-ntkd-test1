@@ -38,7 +38,7 @@ namespace Netsukuku
             }
         }
 
-        public Object evaluate_enter(int lvl, Object evaluate_enter_data)
+        public Object evaluate_enter(int lvl, Object evaluate_enter_data, Gee.List<int> client_address)
         throws HandlingImpossibleError
         {
             error("not implemented yet");
@@ -61,7 +61,7 @@ namespace Netsukuku
             }
         }
 
-        public Object begin_enter(int lvl, Object begin_enter_data)
+        public Object begin_enter(int lvl, Object begin_enter_data, Gee.List<int> client_address)
         throws HandlingImpossibleError
         {
             error("not implemented yet");
@@ -84,7 +84,7 @@ namespace Netsukuku
             }
         }
 
-        public Object completed_enter(int lvl, Object completed_enter_data)
+        public Object completed_enter(int lvl, Object completed_enter_data, Gee.List<int> client_address)
         throws HandlingImpossibleError
         {
             error("not implemented yet");
@@ -107,7 +107,7 @@ namespace Netsukuku
             }
         }
 
-        public Object abort_enter(int lvl, Object abort_enter_data)
+        public Object abort_enter(int lvl, Object abort_enter_data, Gee.List<int> client_address)
         throws HandlingImpossibleError
         {
             error("not implemented yet");
@@ -172,9 +172,18 @@ namespace Netsukuku
             }
         }
 
-        public int get_my_pos(int lvl)
+        public int get_n_nodes()
         {
-            return identity_data.my_naddr.pos[lvl];
+            try {
+                return identity_data.qspn_mgr.get_nodes_inside(levels);
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
+        }
+
+        public bool can_reserve (int lvl)
+        {
+            return lvl >= subnetlevel;
         }
 
         public Gee.List<int> get_free_pos(int lvl)
@@ -190,13 +199,9 @@ namespace Netsukuku
             }
         }
 
-        public int get_n_nodes()
+        public int get_my_pos(int lvl)
         {
-            try {
-                return identity_data.qspn_mgr.get_nodes_inside(levels);
-            } catch (QspnBootstrapInProgressError e) {
-                assert_not_reached();
-            }
+            return identity_data.my_naddr.pos[lvl];
         }
 
         public int64 get_fp_id(int lvl)
@@ -228,13 +233,18 @@ namespace Netsukuku
 
         public ICoordinatorManagerStub get_stub_for_all_neighbors()
         {
+            error("not implemented yet");
+            /*
             IAddressManagerStub? addrstub = Coordinator.root_stub_broadcast(identity_data);
             if(addrstub == null) return new CoordinatorManagerStubVoid();
             return new CoordinatorManagerStubHolder(addrstub);
+            */
         }
 
         public Gee.List<ICoordinatorManagerStub> get_stub_for_each_neighbor()
         {
+            error("not implemented yet");
+            /*
             ArrayList<ICoordinatorManagerStub> ret = new ArrayList<ICoordinatorManagerStub>();
             foreach (IdentityArc ia in identity_data.identity_arcs)
             {
@@ -244,9 +254,11 @@ namespace Netsukuku
                 }
             }
             return ret;
+            */
         }
     }
 
+    /*
     namespace Coordinator
     {
         IAddressManagerStub root_stub_unicast_from_ia(IdentityArc ia, bool wait_reply)
@@ -274,4 +286,5 @@ namespace Netsukuku
                 null);
         }
     }
+    */
 }
