@@ -23,6 +23,7 @@ using Netsukuku.Identities;
 using Netsukuku.Qspn;
 using Netsukuku.PeerServices;
 using Netsukuku.Coordinator;
+using Netsukuku.Hooking;
 
 namespace Netsukuku
 {
@@ -413,6 +414,23 @@ namespace Netsukuku
         if (first_identity_data.main_id)
             first_identity_data.gone_connectivity.connect(first_identity_data.handle_gone_connectivity_for_coord);
 
+        // HookingManager
+        first_identity_data.hook_mgr = new HookingManager();
+        identity_mgr.set_identity_module(first_identity_data.nodeid, "hooking", first_identity_data.hook_mgr);
+        // immediately after creation, connect to signals.
+        first_identity_data.hook_mgr.same_network.connect((_ia) =>
+            per_identity_hooking_same_network(first_identity_data, _ia));
+        first_identity_data.hook_mgr.another_network.connect((_ia, network_id) =>
+            per_identity_hooking_another_network(first_identity_data, _ia, network_id));
+        first_identity_data.hook_mgr.do_prepare_migration.connect(() =>
+            per_identity_hooking_do_prepare_migration(first_identity_data));
+        first_identity_data.hook_mgr.do_finish_migration.connect(() =>
+            per_identity_hooking_do_finish_migration(first_identity_data));
+        first_identity_data.hook_mgr.do_prepare_enter.connect((enter_id) =>
+            per_identity_hooking_do_prepare_enter(first_identity_data, enter_id));
+        first_identity_data.hook_mgr.do_finish_enter.connect((enter_id, guest_gnode_level, entry_data, go_connectivity_position) =>
+            per_identity_hooking_do_finish_enter(first_identity_data, enter_id, guest_gnode_level, entry_data, go_connectivity_position));
+
         first_identity_data = null;
 
         // register handlers for SIGINT and SIGTERM to exit
@@ -611,6 +629,7 @@ namespace Netsukuku
             qspn_mgr = null;
             peers_mgr = null;
             coord_mgr = null;
+            hook_mgr = null;
         }
 
         public int local_identity_index;
@@ -626,6 +645,7 @@ namespace Netsukuku
         public QspnManager qspn_mgr;
         public PeersManager peers_mgr;
         public CoordinatorManager coord_mgr;
+        public HookingManager hook_mgr;
 
         public ArrayList<IdentityArc> identity_arcs;
         public IdentityArc? identity_arcs_find(IIdmgmtArc arc, IIdmgmtIdentityArc id_arc)

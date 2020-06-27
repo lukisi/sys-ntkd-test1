@@ -10,3 +10,6 @@
 [submodule "coordinator"]
 	path = coordinator
 	url = /home/luca/github/coordinator
+[submodule "hooking"]
+	path = hooking
+	url = /home/luca/github/hooking

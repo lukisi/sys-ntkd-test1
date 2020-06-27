@@ -6,6 +6,7 @@ SUBDIRS = \
 	identities \
 	qspn \
 	coordinator \
+	hooking \
 	$(NULL)
 
 bin_PROGRAMS =  \
@@ -30,6 +31,8 @@ sys_ntkd_alone_SOURCES =  \
 	qspn_signals.vala \
 	peers_helpers.vala \
 	coordinator_helpers.vala \
+	hooking_helpers.vala \
+	hooking_signals.vala \
 	identity_ip_commands.vala \
 	identity_ip_compute.vala \
 	table_names.vala \
@@ -39,6 +42,7 @@ sys_ntkd_alone_SOURCES =  \
 	identities/identities.vapi \
 	qspn/qspn.vapi \
 	coordinator/coord.vapi \
+	hooking/hooking.vapi \
 	$(NULL)
 
 #	enter_network.vala \
@@ -74,6 +78,7 @@ sys_ntkd_alone_CPPFLAGS = \
 	-I$(srcdir)/identities \
 	-I$(srcdir)/qspn \
 	-I$(srcdir)/coordinator \
+	-I$(srcdir)/hooking \
 	$(NULL)
 
 sys_ntkd_alone_LDADD = \
@@ -89,5 +94,6 @@ sys_ntkd_alone_LDADD = \
 	$(builddir)/identities/libidentities.la \
 	$(builddir)/qspn/libqspn.la \
 	$(builddir)/coordinator/libcoord.la \
+	$(builddir)/hooking/libhooking.la \
 	$(NULL)
 
