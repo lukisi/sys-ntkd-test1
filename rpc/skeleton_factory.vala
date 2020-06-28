@@ -392,10 +392,31 @@ namespace Netsukuku
             public unowned IPeersManagerSkeleton
             peers_manager_getter()
             {
-                // member peers_mgr of identity_data.
+                // member peers_mgr of identity_data is PeersManager, which is a IPeersManagerSkeleton
                 if (identity_data.peers_mgr == null)
                 {
-                    warning(@"IdentitySkeleton.peers_manager_getter: id $(identity_data.nodeid.id) has peers_mgr NULL yet. Abort responding.");
+                    print(@"IdentitySkeleton.peers_manager_getter: id $(identity_data.nodeid.id) has peers_mgr NULL. Might be too early, wait a bit.\n");
+                    bool once_more = true; int wait_next = 5;
+                    while (once_more)
+                    {
+                        once_more = false;
+                        if (identity_data.peers_mgr == null)
+                        {
+                            //  let's wait a bit and try again a few times.
+                            if (wait_next < 3000) {
+                                wait_next = wait_next * 10; tasklet.ms_wait(wait_next); once_more = true;
+                            }
+                        }
+                        else
+                        {
+                            print(@"IdentitySkeleton.peers_manager_getter: id $(identity_data.nodeid.id) now has peers_mgr valid.\n");
+                        }
+                    }
+                }
+                if (identity_data.peers_mgr == null)
+                {
+                    print(@"IdentitySkeleton.peers_manager_getter: id $(identity_data.nodeid.id) has peers_mgr NULL. Not bootstrapped? abort responding.\n");
+                    // Probably is a call to broadcast.
                     tasklet.exit_tasklet(null);
                 }
                 return identity_data.peers_mgr;

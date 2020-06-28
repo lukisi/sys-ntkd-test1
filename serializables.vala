@@ -470,6 +470,14 @@ namespace Netsukuku
         }
     }
 
+    class PeersSourceID : Object, ISourceID
+    {
+    }
+
+    class PeersUnicastID : Object, IUnicastID
+    {
+    }
+
     internal errordomain HelperDeserializeError {
         GENERIC
     }

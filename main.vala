@@ -242,6 +242,8 @@ namespace Netsukuku
         typeof(Naddr).class_peek();
         typeof(Fingerprint).class_peek();
         typeof(Cost).class_peek();
+        typeof(PeersSourceID).class_peek();
+        typeof(PeersUnicastID).class_peek();
 
         // Initialize pseudo-random number generators.
         string _seed = @"$(pid)";
@@ -415,7 +417,9 @@ namespace Netsukuku
             first_identity_data.gone_connectivity.connect(first_identity_data.handle_gone_connectivity_for_coord);
 
         // HookingManager
-        first_identity_data.hook_mgr = new HookingManager();
+        first_identity_data.hook_mgr = new HookingManager(
+            new HookingMapPaths(first_identity_data.local_identity_index),
+            new HookingCoordinator(first_identity_data.local_identity_index));
         identity_mgr.set_identity_module(first_identity_data.nodeid, "hooking", first_identity_data.hook_mgr);
         // immediately after creation, connect to signals.
         first_identity_data.hook_mgr.same_network.connect((_ia) =>
@@ -761,6 +765,7 @@ namespace Netsukuku
         public IIdmgmtIdentityArc id_arc;
         public string peer_mac;
         public string peer_linklocal;
+        public HookingIdentityArc? hooking_arc;
 
         public QspnArc? qspn_arc;
         public int64? network_id;
@@ -779,6 +784,7 @@ namespace Netsukuku
             network_id = null;
             prev_peer_mac = null;
             prev_peer_linklocal = null;
+            hooking_arc = null;
         }
     }
 
