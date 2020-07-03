@@ -425,13 +425,27 @@ namespace Netsukuku
             public unowned ICoordinatorManagerSkeleton
             coordinator_manager_getter()
             {
-                error("not in this test");
+                // member coord_mgr of identity_data is CoordinatorManager, which is a ICoordinatorManagerSkeleton
+                if (identity_data.coord_mgr == null)
+                {
+                    print(@"IdentitySkeleton.coordinator_manager_getter: id $(identity_data.nodeid.id) has coord_mgr NULL. Not bootstrapped? abort responding.\n");
+                    // Probably is a call to broadcast.
+                    tasklet.exit_tasklet(null);
+                }
+                return identity_data.coord_mgr;
             }
 
             public unowned IHookingManagerSkeleton
             hooking_manager_getter()
             {
-                error("not in this test");
+                // member hook_mgr of identity_data is HookingManager, which is a IHookingManagerSkeleton
+                if (identity_data.hook_mgr == null)
+                {
+                    print(@"IdentitySkeleton.hooking_manager_getter: id $(identity_data.nodeid.id) has hook_mgr NULL. Not bootstrapped? abort responding.\n");
+                    // Probably is a call to broadcast.
+                    tasklet.exit_tasklet(null);
+                }
+                return identity_data.hook_mgr;
             }
 
             /* TODO in ntkdrpc

@@ -18,6 +18,8 @@
 
 using Gee;
 using Netsukuku.Hooking;
+using Netsukuku.Qspn;
+using Netsukuku.Coordinator;
 using TaskletSystem;
 
 namespace Netsukuku
@@ -32,7 +34,8 @@ namespace Netsukuku
 
         public IHookingManagerStub get_stub()
         {
-            error("not implemented yet");
+            IAddressManagerStub addrstub = stub_factory.get_stub_identity_aware_unicast_from_ia(ia, true);
+            return new HookingManagerStubHolder(addrstub, ia);
         }
     }
 
@@ -54,91 +57,182 @@ namespace Netsukuku
 
         public int64 get_network_id()
         {
-            error("not implemented yet");
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            Fingerprint fp_levels;
+            try {
+                fp_levels = (Fingerprint)qspn_mgr.get_fingerprint(levels);
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
+            return fp_levels.id;
         }
 
         public int get_levels()
         {
-            error("not implemented yet");
+            return levels;
         }
 
         public int get_gsize(int level)
         {
-            error("not implemented yet");
+            return gsizes[level];
         }
 
         public int get_epsilon(int level)
         {
-            error("not implemented yet");
+            return hooking_epsilon[level];
         }
 
         public int get_n_nodes()
         {
-            error("not implemented yet");
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            try {
+                return qspn_mgr.get_nodes_inside(levels);
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
         }
 
         public int get_my_pos(int level)
         {
-            error("not implemented yet");
+            Naddr my_naddr = identity_data.my_naddr;
+            return my_naddr.pos[level];
         }
 
         public int get_my_eldership(int level)
         {
-            error("not implemented yet");
+            Fingerprint my_fp = identity_data.my_fp;
+            return my_fp.elderships[level];
         }
 
         public int get_subnetlevel()
         {
-            error("not implemented yet");
+            return subnetlevel;
         }
 
         public bool exists(int level, int pos)
         {
-            error("not implemented yet");
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            try {
+                return qspn_mgr.is_known_destination(new HCoord(level, pos));
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
         }
 
         public int get_eldership(int level, int pos)
         {
-            error("not implemented yet");
-        }
-
-        public Gee.List<IPairHCoordInt> adjacent_to_my_gnode(int level_adjacent_gnodes, int level_my_gnode)
-        {
-            error("not implemented yet");
+            // requires: exists(int level, int pos) == true
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            try {
+                IQspnFingerprint _fp = qspn_mgr.get_fingerprint_of_known_destination(new HCoord(level, pos));
+                Fingerprint fp = (Fingerprint)_fp;
+                return fp.elderships[0];
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
         }
 
         public IHookingManagerStub gateway(int level, int pos)
         {
-            error("not implemented yet");
+            error("not implemented in this test");
+            /*
+            // requires: exists(int level, int pos) == true
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            try {
+                Gee.List<IQspnNodePath> paths = qspn_mgr.get_paths_to(new HCoord(level, pos));
+                assert(! paths.is_empty);
+                IQspnNodePath best_path = paths[0];
+                QspnArc gw_qspn_arc = (QspnArc)best_path.i_qspn_get_arc();
+                // find gw_ia by gw_qspn_arc, otherwise error.
+                IdentityArc? gw_ia = null;
+                foreach (IdentityArc _ia in identity_data.identity_arcs) if (_ia.qspn_arc == gw_qspn_arc)
+                {
+                    gw_ia = _ia;
+                    break;
+                }
+                assert (gw_ia != null);
+                IAddressManagerStub addrstub = stub_factory.get_stub_identity_aware_unicast_from_ia(gw_ia, false);
+                return new HookingManagerStubHolder(addrstub, gw_ia);
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
+            */
         }
-    }
 
-    class HookingAdjacentGNode : Object, IPairHCoordInt
-    {
-        public int my_gnode_lvl {get; private set;}
-        public HCoord hc {get; private set;}
-        public int border_pos {get; private set;}
-
-        public HookingAdjacentGNode(int my_gnode_lvl, HCoord hc, int border_pos)
+        private class HookingAdjacentGNode : Object, IPairHCoordInt
         {
-            this.my_gnode_lvl = my_gnode_lvl;
-            this.hc = hc;
-            this.border_pos = border_pos;
+            public HookingAdjacentGNode(int level_my_gnode, HCoord hc_adjacent, int pos_my_border_gnode)
+            {
+                this.hc_adjacent = hc_adjacent;
+                this.level_my_gnode = level_my_gnode;
+                this.pos_my_border_gnode = pos_my_border_gnode;
+            }
+            private int level_my_gnode;
+            private HCoord hc_adjacent;
+            private int pos_my_border_gnode;
+
+            public int get_level_my_gnode()
+            {
+                return level_my_gnode;
+            }
+
+            public HCoord get_hc_adjacent()
+            {
+                return hc_adjacent;
+            }
+
+            public int get_pos_my_border_gnode()
+            {
+                return pos_my_border_gnode;
+            }
         }
-
-        public int get_level_my_gnode()
+        public Gee.List<IPairHCoordInt> adjacent_to_my_gnode(int level_adjacent_gnodes, int level_my_gnode)
         {
-            return my_gnode_lvl;
-        }
-
-        public int get_pos_my_border_gnode()
-        {
-            return border_pos;
-        }
-
-        public HCoord get_hc_adjacent()
-        {
-            return hc;
+            QspnManager qspn_mgr = identity_data.qspn_mgr;
+            while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
+            try {
+                assert(level_adjacent_gnodes >= level_my_gnode);
+                // Find g-nodes of level level_adjacent_gnodes in my next-higher g-node.
+                Gee.List<HCoord> existing_gnodes = qspn_mgr.get_known_destinations(level_adjacent_gnodes);
+                ArrayList<IPairHCoordInt> ret = new ArrayList<IPairHCoordInt>();
+                foreach (HCoord hc in existing_gnodes)
+                {
+                    // Is hc adjacent to my g-node of level level_my_gnode?
+                    IQspnNodePath p = qspn_mgr.get_paths_to(hc)[0];
+                    Gee.List<IQspnHop> hops = p.i_qspn_get_hops();
+                    // We must save last intermediate hop of level level_my_gnode-1
+                    HCoord border_gnode = new HCoord(level_my_gnode-1, get_my_pos(level_my_gnode-1));
+                    bool adj = true;
+                    foreach (IQspnHop hop in hops)
+                    {
+                        HCoord hop_hc = hop.i_qspn_get_hcoord();
+                        if (hop_hc.equals(hc)) break; // for each hop but last.
+                        if (hop_hc.lvl == level_my_gnode-1)
+                        {
+                            border_gnode = hop_hc;
+                        }
+                        if (hop_hc.lvl >= level_my_gnode)
+                        {
+                            // not adjacent.
+                            adj = false;
+                            break;
+                        }
+                    }
+                    if (! adj) break;
+                    // It is adjacent. Is my border_gnode not virtual?
+                    if (border_gnode.pos >= gsizes[level_my_gnode-1]) break;
+                    // All ok.
+                    ret.add(new HookingAdjacentGNode(level_my_gnode, hc, border_gnode.pos));
+                }
+                return ret;
+            } catch (QspnBootstrapInProgressError e) {
+                assert_not_reached();
+            }
         }
     }
 
