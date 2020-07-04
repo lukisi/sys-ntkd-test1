@@ -40,12 +40,13 @@ namespace Netsukuku
         warning("Not implemented yet: another_network");
     }
 
-    void per_identity_hooking_do_prepare_migration(IdentityData id)
+    void per_identity_hooking_do_prepare_migration(IdentityData id, int migration_id)
     {
         warning("Not implemented yet: do_prepare_migration");
     }
 
-    void per_identity_hooking_do_finish_migration(IdentityData id)
+    void per_identity_hooking_do_finish_migration(IdentityData id,
+        int migration_id, int guest_gnode_level, EntryData migration_data, int go_connectivity_position)
     {
         warning("Not implemented yet: do_finish_migration");
     }

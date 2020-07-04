@@ -42,6 +42,9 @@ namespace Netsukuku
         throws HandlingImpossibleError
         {
             error("not implemented yet");
+            /*
+            return identity_data.hook_mgr.evaluate_enter(evaluate_enter_data, client_address);
+            */
         }
     }
 
@@ -65,6 +68,9 @@ namespace Netsukuku
         throws HandlingImpossibleError
         {
             error("not implemented yet");
+            /*
+            return identity_data.hook_mgr.begin_enter(lvl, begin_enter_data, client_address);
+            */
         }
     }
 
@@ -88,6 +94,9 @@ namespace Netsukuku
         throws HandlingImpossibleError
         {
             error("not implemented yet");
+            /*
+            return identity_data.hook_mgr.completed_enter(lvl, completed_enter_data, client_address);
+            */
         }
     }
 
@@ -111,6 +120,9 @@ namespace Netsukuku
         throws HandlingImpossibleError
         {
             error("not implemented yet");
+            /*
+            return identity_data.hook_mgr.abort_enter(lvl, abort_enter_data, client_address);
+            */
         }
     }
 
@@ -133,26 +145,41 @@ namespace Netsukuku
         public void prepare_migration(int lvl, Object prepare_migration_data)
         {
             error("not implemented yet");
+            /*
+            identity_data.hook_mgr.prepare_migration(lvl, prepare_migration_data);
+            */
         }
 
         public void finish_migration(int lvl, Object finish_migration_data)
         {
             error("not implemented yet");
+            /*
+            identity_data.hook_mgr.finish_migration(lvl, finish_migration_data);
+            */
         }
 
         public void prepare_enter(int lvl, Object prepare_enter_data)
         {
             error("not implemented yet");
+            /*
+            identity_data.hook_mgr.prepare_enter(lvl, prepare_enter_data);
+            */
         }
 
         public void finish_enter(int lvl, Object finish_enter_data)
         {
             error("not implemented yet");
+            /*
+            identity_data.hook_mgr.finish_enter(lvl, finish_enter_data);
+            */
         }
 
         public void we_have_splitted(int lvl, Object we_have_splitted_data)
         {
             error("not implemented yet");
+            /*
+
+            */
         }
     }
 

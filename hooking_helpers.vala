@@ -252,34 +252,113 @@ namespace Netsukuku
             }
         }
 
-        public Object evaluate_enter(int lvl, Object evaluate_enter_data) throws CoordProxyError
-        {
-            error("not implemented yet");
-        }
-
         public int get_n_nodes()
         {
-            error("not implemented yet");
+            return identity_data.coord_mgr.get_n_nodes();
+        }
+
+        public Object evaluate_enter(Object evaluate_enter_data) throws CoordProxyError
+        {
+            Object ret;
+            try {
+                ret = identity_data.coord_mgr.evaluate_enter(levels, evaluate_enter_data);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            }
+            return ret;
+        }
+
+        public Object get_hooking_memory(int lvl) throws CoordProxyError
+        {
+            Object ret;
+            try {
+                ret = identity_data.coord_mgr.get_hooking_memory(lvl);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            } catch (Coordinator.NotCoordinatorNodeError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.NotCoordinatorNodeError: $(e.message)");
+            }
+            return ret;
+        }
+
+        public void set_hooking_memory(int lvl, Object memory) throws CoordProxyError
+        {
+            try {
+                identity_data.coord_mgr.set_hooking_memory(lvl, memory);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            } catch (Coordinator.NotCoordinatorNodeError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.NotCoordinatorNodeError: $(e.message)");
+            }
+        }
+
+        public Object begin_enter(int lvl, Object begin_enter_data) throws CoordProxyError
+        {
+            Object ret;
+            try {
+                ret = identity_data.coord_mgr.begin_enter(lvl, begin_enter_data);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            }
+            return ret;
+        }
+
+        public Object completed_enter(int lvl, Object completed_enter_data) throws CoordProxyError
+        {
+            Object ret;
+            try {
+                ret = identity_data.coord_mgr.completed_enter(lvl, completed_enter_data);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            }
+            return ret;
+        }
+
+        public Object abort_enter(int lvl, Object abort_enter_data) throws CoordProxyError
+        {
+            Object ret;
+            try {
+                ret = identity_data.coord_mgr.abort_enter(lvl, abort_enter_data);
+            } catch (Coordinator.ProxyError e) {
+                throw new CoordProxyError.GENERIC(@"Coordinator.ProxyError: $(e.message)");
+            }
+            return ret;
+        }
+
+        public void prepare_enter(int lvl, Object prepare_enter_data)
+        {
+            identity_data.coord_mgr.prepare_enter(lvl, prepare_enter_data);
+        }
+
+        public void finish_enter(int lvl, Object finish_enter_data)
+        {
+            identity_data.coord_mgr.finish_enter(lvl, finish_enter_data);
         }
 
         public void reserve(int host_lvl, int reserve_request_id, out int new_pos, out int new_eldership) throws CoordReserveError
         {
-            error("not implemented yet");
+            try {
+                Reservation ret = identity_data.coord_mgr.reserve(host_lvl, reserve_request_id);
+                new_pos = ret.new_pos;
+                new_eldership = ret.new_eldership;
+            } catch (ReserveError e) {
+                throw new CoordReserveError.GENERIC(@"$(e.message)");
+            }
         }
 
         public void delete_reserve(int host_lvl, int reserve_request_id)
         {
-            error("not implemented yet");
+            identity_data.coord_mgr.delete_reserve(host_lvl, reserve_request_id);
         }
 
-        public void prepare_migration(/*TODO*/)
+        public void prepare_migration(int lvl, Object prepare_migration_data)
         {
-            error("not implemented yet");
+            identity_data.coord_mgr.prepare_migration(lvl, prepare_migration_data);
         }
 
-        public void finish_migration(/*TODO*/)
+        public void finish_migration(int lvl, Object finish_migration_data)
         {
-            error("not implemented yet");
+            identity_data.coord_mgr.finish_migration(lvl, finish_migration_data);
         }
     }
 }
