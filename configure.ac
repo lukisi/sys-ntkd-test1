@@ -1,5 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([sys-ntkd-alone],[1.0])
+AC_INIT([sys-ntkd-test1],[1.0])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([subdir-objects] [1.11])

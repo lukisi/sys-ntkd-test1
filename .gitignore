@@ -24,7 +24,7 @@ identity_ip_compute.c
 table_names.c
 ipv4_compute.c
 update_graph.c
-sys_ntkd_alone_vala.stamp*
+sys_ntkd_test1_vala.stamp*
 Makefile.in
 aclocal.m4
 autom4te.cache

@@ -10,10 +10,10 @@ SUBDIRS = \
 	$(NULL)
 
 bin_PROGRAMS =  \
-	sys_ntkd_alone \
+	sys_ntkd_test1 \
 	$(NULL)
 
-sys_ntkd_alone_SOURCES =  \
+sys_ntkd_test1_SOURCES =  \
 	main.vala \
 	rngen.vala \
 	commander.vala \
@@ -49,7 +49,7 @@ sys_ntkd_alone_SOURCES =  \
 #	migrate.vala \
 #
 
-sys_ntkd_alone_VALAFLAGS = \
+sys_ntkd_test1_VALAFLAGS = \
 	--vapidir $(GEE_PREFIX)/share/vala/vapi \
 	--vapidir $(TASKLETSYSTEM_VAPIDIR) \
 	--vapidir $(PTHTASKLET_VAPIDIR) \
@@ -65,7 +65,7 @@ sys_ntkd_alone_VALAFLAGS = \
 	--pkg posix \
 	$(NULL)
 
-sys_ntkd_alone_CPPFLAGS = \
+sys_ntkd_test1_CPPFLAGS = \
 	-w \
 	$(GOBJECT_CFLAGS) \
 	$(GEE_CFLAGS) \
@@ -81,7 +81,7 @@ sys_ntkd_alone_CPPFLAGS = \
 	-I$(srcdir)/hooking \
 	$(NULL)
 
-sys_ntkd_alone_LDADD = \
+sys_ntkd_test1_LDADD = \
 	-lm \
 	$(GOBJECT_LIBS) \
 	$(GEE_LIBS) \
