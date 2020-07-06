@@ -34,8 +34,11 @@ namespace Netsukuku
 
         public IHookingManagerStub get_stub()
         {
+            error("not in this test");
+            /*
             IAddressManagerStub addrstub = stub_factory.get_stub_identity_aware_unicast_from_ia(ia, true);
             return new HookingManagerStubHolder(addrstub, ia);
+            */
         }
     }
 
@@ -136,10 +139,14 @@ namespace Netsukuku
             }
         }
 
-        public IHookingManagerStub gateway(int level, int pos)
+        public IHookingManagerStub? gateway(int level, int pos,
+            CallerInfo? received_from=null,
+            IHookingManagerStub? failed=null)
         {
             error("not implemented in this test");
             /*
+            **TODO** Look at hooking/testsuites/system_peer/hooking_helpers.vala
+
             // requires: exists(int level, int pos) == true
             QspnManager qspn_mgr = identity_data.qspn_mgr;
             while (! qspn_mgr.is_bootstrap_complete()) tasklet.ms_wait(10);
@@ -268,7 +275,7 @@ namespace Netsukuku
             return ret;
         }
 
-        public Object get_hooking_memory(int lvl) throws CoordProxyError
+        public Object? get_hooking_memory(int lvl) throws CoordProxyError
         {
             Object ret;
             try {
