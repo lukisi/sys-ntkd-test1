@@ -44,8 +44,6 @@ namespace Netsukuku
 
         /* Get a stub for a whole-node unicast request.
          */
-        // no arcs in this testsuite.
-        /*
         public IAddressManagerStub
         get_stub_whole_node_unicast(
             INeighborhoodArc arc,
@@ -57,7 +55,6 @@ namespace Netsukuku
             string send_pathname = @"conn_$(arc.neighbour_nic_addr)";
             return get_addr_stream_system(send_pathname, source_id, unicast_id, src_nic, wait_reply);
         }
-        */
 
         /* Get a stub for a whole-node broadcast request.
          */

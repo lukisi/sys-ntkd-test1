@@ -87,6 +87,38 @@ namespace Netsukuku
             tasklet.exit_tasklet();
         }
 
+        private IAddressManagerSkeleton? get_dispatcher(StreamCallerInfo caller_info)
+        {
+            if (caller_info.source_id is IdentityAwareSourceID)
+            {
+                error("not in this test");
+                /*
+                IdentityAwareSourceID _source_id = (IdentityAwareSourceID)caller_info.source_id;
+                NodeID source_nodeid = _source_id.id;
+                if (! (caller_info.unicast_id is IdentityAwareUnicastID)) abort_tasklet(@"Bad caller_info.unicast_id");
+                IdentityAwareUnicastID _unicast_id = (IdentityAwareUnicastID)caller_info.unicast_id;
+                NodeID unicast_nodeid = _unicast_id.id;
+                if (! (caller_info.src_nic is NeighbourSrcNic)) abort_tasklet(@"Bad caller_info.src_nic");
+                string peer_mac = ((NeighbourSrcNic)caller_info.src_nic).mac;
+                return get_identity_skeleton(source_nodeid, unicast_nodeid, peer_mac);
+                */
+            }
+            else if (caller_info.source_id is WholeNodeSourceID)
+            {
+                WholeNodeSourceID _source_id = (WholeNodeSourceID)caller_info.source_id;
+                NeighborhoodNodeID neighbour_id = _source_id.id;
+                if (! (caller_info.unicast_id is WholeNodeUnicastID)) abort_tasklet(@"Bad caller_info.unicast_id");
+                WholeNodeUnicastID _unicast_id = (WholeNodeUnicastID)caller_info.unicast_id;
+                NeighborhoodNodeID my_id = _unicast_id.neighbour_id;
+                if (! my_id.equals(node_skeleton.id)) abort_tasklet(@"caller_info.unicast_id is not me.");
+                return node_skeleton;
+            }
+            else
+            {
+                abort_tasklet(@"Bad caller_info.source_id");
+            }
+        }
+
         private Gee.List<IAddressManagerSkeleton> get_dispatcher_set(DatagramCallerInfo caller_info)
         {
             if (caller_info.source_id is IdentityAwareSourceID)
@@ -251,14 +283,11 @@ namespace Netsukuku
             {
                 if (caller_info is StreamCallerInfo)
                 {
-                    error("not in this test");
-                    /*
                     StreamCallerInfo c = (StreamCallerInfo)caller_info;
                     var ret = new ArrayList<IAddressManagerSkeleton>();
                     IAddressManagerSkeleton? d = skeleton_factory.get_dispatcher(c);
                     if (d != null) ret.add(d);
                     return ret;
-                    */
                 }
                 else if (caller_info is DatagramCallerInfo)
                 {
