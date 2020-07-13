@@ -40,14 +40,11 @@ namespace Netsukuku
 
     void neighborhood_arc_added(INeighborhoodArc neighborhood_arc)
     {
-        // no arcs in this testsuite.
-        /*
         print(@"Neighborhood: [$(printabletime())]: Signal arc_added.\n");
         // Add arc to module Identities and to arc_map
         IdmgmtArc i_arc = new IdmgmtArc(neighborhood_arc);
         arc_map[i_arc.id] = new NodeArc(neighborhood_arc, i_arc);
         identity_mgr.add_arc(i_arc);
-        */
     }
 
     void neighborhood_arc_changed(INeighborhoodArc neighborhood_arc)

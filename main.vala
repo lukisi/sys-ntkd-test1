@@ -66,8 +66,7 @@ namespace Netsukuku
 
     NeighborhoodManager? neighborhood_mgr;
     IdentityManager? identity_mgr;
-    // not used in this test
-    /*HashMap<int,NodeArc> arc_map;*/
+    HashMap<int,NodeArc> arc_map;
     HashMap<string,HandledNic> handlednic_map;
     SkeletonFactory skeleton_factory;
     StubFactory stub_factory;
@@ -278,6 +277,8 @@ namespace Netsukuku
         fake_cm.single_command_in_block(bid, new ArrayList<string>.wrap({
             @"sysctl", @"net.ipv4.conf.all.rp_filter=0"}));
         fake_cm.end_block(bid);
+
+        arc_map = new HashMap<int,NodeArc>();
 
         // Init module Neighborhood
         neighborhood_mgr = new NeighborhoodManager(
@@ -608,8 +609,6 @@ namespace Netsukuku
         public INeighborhoodNetworkInterface nic {get; private set;}
     }
 
-    // not used in this test
-    /*
     class NodeArc : Object
     {
         public NodeArc(INeighborhoodArc neighborhood_arc, IdmgmtArc i_arc)
@@ -620,7 +619,6 @@ namespace Netsukuku
         public INeighborhoodArc neighborhood_arc;
         public IdmgmtArc i_arc; // for module Identities
     }
-    */
 
     IdentityData main_identity_data;
     class IdentityData : Object
